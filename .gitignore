@@ -1,3 +1,7 @@
+#user defined
+sample_vcf/
+previouslySelectedFolder.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
