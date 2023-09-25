@@ -16,17 +16,13 @@ class GlobalConstants:
     #UNDO_FILE_EXTENSION = ".undo"
     #TEXT_FILE_MIME_TYPE = "text/"
 
-# class FileSearchModes:
-#     choice_None = 'Exit'
-#     choice_fileBinary = 'Duplicate file segregation'
-#     choice_imagePixels = 'Duplicate image segregation'    
-#     choice_lineDuplicates = 'Unique lines finder'
-#     choice_residualFileDeletion = 'Delete files (like Thumbs.db etc.)'
-#     choice_undoFileMove = 'Undo files that were moved and renamed'
+class Properties:#property names present in a VCard https://en.wikipedia.org/wiki/VCard#toc-Properties
+    BEGIN = 'BEGIN'
+    VCARD = 'VCARD'
+    EMAIL = 'EMAIL'
+    END = 'END'
+    FN = 'FN' #formatted name 
+    N = 'N' #name
+    NAME = 'NAME'
+    TEL = 'TEL'
     
-# class FilenameMatching:
-#     fullString = "fullString"
-#     wildcard = "wildcard"
-
-# class Tests:    
-#     testFolder = os.path.join("tests", GlobalConstants.dummyPrefix + "folders", "") #The quotes at the end add an OS-specific folder slash
