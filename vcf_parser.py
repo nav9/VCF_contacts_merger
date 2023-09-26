@@ -28,6 +28,7 @@ class VCF:
         self.allContacts = deque()
         self.totalContactsProcessed = 0
         self.contactsDiscarded = 0
+        self.duplicates = [] #[[1,7,9], [2,90,340], ...] #each internal list is a bunch of indices of contacts of self.allContacts, where the phone numbers are similar. Later, we present these contacts to the User and ask them to sort it out
 
     def loadVCF(self, folderName):
         """ Load each contact in each VCF file, and ignore exact matches to already loaded contacts """
@@ -38,6 +39,51 @@ class VCF:
         log.info(f"{self.contactsDiscarded} contacts were exact duplicates of previously loaded contacts.")
         log.info(f"So now there are {len(self.allContacts)} contacts.")
         assert(len(self.allContacts) == (self.totalContactsProcessed - self.contactsDiscarded)) #ensure that there are no contacts missed
+        self.searchForDuplicateContactsBasedOnPhoneNumber()
+
+    def searchForDuplicateContactsBasedOnPhoneNumber(self):
+        indexOfDuplicates = set() #indices of contacts with similar phone numbers that were already found
+        for i in range(len(self.allContacts)-1):
+            duplicate = []
+            iPhoneNumbers = self.__getLast8digitsOfPhoneNumber(i)
+            for j in range(i+1, len(self.allContacts)):
+                if j in indexOfDuplicates: continue #skip any duplicate index that was already found                    
+                else:
+                    if iPhoneNumbers.intersection(self.__getLast8digitsOfPhoneNumber(j)):#common partial match of phone numbers were found
+                        indexOfDuplicates.add(j)
+                        duplicate.append(j)
+            if duplicate:#at least one duplicate found
+                duplicate.insert(const.GlobalConstants.FIRST_POSITION_IN_LIST, i)#add i to the beginning of the list
+                self.duplicates.append(duplicate)  
+        
+    def showDuplicateContactsFound(self):
+        for duplicate in self.duplicates:
+            for contact in duplicate:
+                print(self.allContacts[contact])
+            print('-------------------------')
+
+    def __getLast8digitsOfPhoneNumber(self, index):
+        """ returns a set of the last 8 digits of all phone numbers found in this contact """
+        phoneNumbers = set()
+        contact = self.allContacts[index]
+        delimiters = [const.GlobalConstants.COLON_DELIMITER, const.GlobalConstants.SEMICOLON_DELIMITER]
+        for entry in contact:
+            if entry.startswith(const.Properties.TEL):
+                #---create a list of the entries without : or ;. Eg: 'TEL;CELL;PREF:*121#' becomes ['TEL', 'CELL', 'PREF', '*121#']
+                for delimiter in delimiters:
+                    entry = " ".join(entry.split(delimiter))
+                entry = entry.split()
+                #---search backward for any part that contains at least one number
+                phoneNumber = None
+                for val in reversed(entry):#search the entry backward
+                    if any(char.isdigit() for char in val):#a number is present in this string, so it might be a phone number
+                        phoneNumber = val
+                        break
+                if phoneNumber:
+                    if len(phoneNumber) >= const.GlobalConstants.NUMBER_OF_TEL_END_DIGITS:
+                        phoneNumber = phoneNumber[-const.GlobalConstants.NUMBER_OF_TEL_END_DIGITS:]#get the last 8 digits
+                    phoneNumbers.add(phoneNumber)
+        return phoneNumbers
 
     def __readData(self, filenameWithPath):
         lines = self.fileOps.readFromFile(filenameWithPath)
@@ -72,6 +118,7 @@ class VCF:
             raise ValueError(f"File {filenameWithPath} appears to be corrupted. Number of {const.Properties.BEGIN} tags = {numberOfBeginsDetected}, but number of {const.Properties.END} = {numberOfEndsDetected}. Please examine the file or remove it from the folder.")        
 
     def __isExactContactAlreadyPresent(self, contact):
+        """ Checks if the contact is an exact duplicate of any existing contact """
         present = False
         for oneContact in self.allContacts:
             if oneContact == contact:

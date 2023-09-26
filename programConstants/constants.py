@@ -13,6 +13,9 @@ class GlobalConstants:
     #supportedImageFormats = ['jpg', 'jpeg', 'png', 'webp'] #let all extensions mentioned here be in lower case. More can be added after testing.
     FIRST_POSITION_IN_LIST = 0
     VCF_EXTENSION = '.vcf'
+    NUMBER_OF_TEL_END_DIGITS = 8 #number of digits at the end of the telephone number to consider for matching with phone numbers of other contacts
+    COLON_DELIMITER = ":"
+    SEMICOLON_DELIMITER = ";"
     #UNDO_FILE_EXTENSION = ".undo"
     #TEXT_FILE_MIME_TYPE = "text/"
 
