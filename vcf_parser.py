@@ -39,7 +39,7 @@ class VCF:
         log.info(f"{self.contactsDiscarded} contacts were exact duplicates of previously loaded contacts.")
         log.info(f"So now there are {len(self.allContacts)} contacts.")
         assert(len(self.allContacts) == (self.totalContactsProcessed - self.contactsDiscarded)) #ensure that there are no contacts missed
-        return len(self.allContacts)
+        return len(self.allContacts), len(self.duplicates)
 
     def searchForDuplicateContactsBasedOnPhoneNumber(self):
         indexOfDuplicates = set() #indices of contacts with similar phone numbers that were already found
@@ -63,7 +63,7 @@ class VCF:
             print('-------------------------')
 
     def __getLast8digitsOfPhoneNumber(self, index):
-        """ returns a set of the last 8 digits of all phone numbers found in this contact """
+        """ returns a set of the last 8 digits (or lesser digits if shorter than 8) of all phone numbers found in this contact """
         phoneNumbers = set()
         contact = self.allContacts[index]
         delimiters = [const.GlobalConstants.COLON_DELIMITER, const.GlobalConstants.SEMICOLON_DELIMITER]

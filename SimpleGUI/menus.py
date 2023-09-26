@@ -2,12 +2,10 @@
 import PySimpleGUI as gui
 from programConstants import constants as const
 from loguru import logger as log
-
-#-----------------------------------------------             
+             
 #-----------------------------------------------
 #-------------------- MENUS --------------------
 #-----------------------------------------------
-#-----------------------------------------------   
 
 class SimplePopup:
     def __init__(self, message, popupTitle) -> None:
@@ -17,22 +15,33 @@ class ContactsChoiceGUI:
     def __init__(self):
         self.event = None
         self.values = None
-        self.horizontalSepLen = 35    
+        self.horizontalSepLen = 90    
+        self.multilineTextboxWidth = 40
+        self.multilineTextboxHeight = 20
     
-    def showUserTheGUI(self):
+    def duplicatesResolverGUI(self, totalContacts, numDuplicates):
         layout = []
-        topText = ["Choose from here", "The contacts"]
+        topText = [f"The program has {totalContacts} contacts in memory, of which {numDuplicates} appear to have duplicates. This GUI shows the unique", "contact on the right and the duplicates on the left. The contact on the right will be saved and the contact on", "the left will be ignored. You can edit the contact on the right, for example, by copying values from the left."]
         for s in topText:
-            layout.append([gui.Text(s, justification = 'left')])
-        
-        layout.append([gui.Input(), gui.FolderBrowse(initial_folder = self.previouslySelectedFolder)])
-        bottomText = ["The file will get saved only when you press Finish"]
+            layout.append([gui.Text(s, text_color = const.Layout.COLOR_GREY, justification=const.Layout.LEFT_JUSTIFY)])    
+        #layout.append([gui.HorizontalSeparator(color = gui.DEFAULT_BACKGROUND_COLOR)])
+        layout.append([gui.Text('_' * self.horizontalSepLen, justification=const.Layout.RIGHT_JUSTIFY, text_color=const.Layout.COLOR_GREY)])
+        contactColumnTitle = gui.Text("Contact to save")
+        contactsDisplay = gui.Multiline(size = (self.multilineTextboxWidth, self.multilineTextboxHeight), key = const.Layout.CONTACTS_DISPLAY_TEXTFIELD, horizontal_scroll = True)
+        duplicatesColumnTitle = gui.Text("Assumed duplicates of the contact to check")
+        duplicatesDisplay = gui.Multiline(size = (self.multilineTextboxWidth, self.multilineTextboxHeight), key = const.Layout.DUPLICATES_DISPLAY_TEXTFIELD, horizontal_scroll = True)
+        leftColumn = [[duplicatesColumnTitle], [duplicatesDisplay]]
+        rightColumn = [[contactColumnTitle], [contactsDisplay]]
+        layout.append([gui.Column(leftColumn), gui.Column(rightColumn)])
+        layout.append([gui.Button(const.Layout.PREV_BUTTON, key = const.Layout.PREV_BUTTON), 
+                       gui.Text(f"1 of {numDuplicates}"),
+                       gui.Button(const.Layout.NEXT_BUTTON, key=const.Layout.NEXT_BUTTON)])
+        bottomText = [f"All contacts will get saved to disk only when you click {const.Layout.SAVE_BUTTON}"]
         for s in bottomText:
-            layout.append([gui.Text(s, text_color = 'grey', justification = 'left')])        
-        layout.append([gui.Text('_' * self.horizontalSepLen, justification = 'right', text_color = 'black')])
-        layout.append([gui.Button(const.GlobalConstants.EVENT_CANCEL), gui.Button('Ok')])
-        
-        window = gui.Window('', layout, grab_anywhere = False, element_justification = 'right')    
+            layout.append([gui.Text(s, text_color = const.Layout.COLOR_GREY)])  
+        layout.append([gui.Button('Save', button_color = 'black on yellow')])
+
+        window = gui.Window('VCF duplicate find and merge', layout, grab_anywhere = False, element_justification = const.Layout.RIGHT_JUSTIFY)    
         self.event, self.values = window.read()        
         window.close()
  

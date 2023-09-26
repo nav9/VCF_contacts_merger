@@ -32,9 +32,15 @@ if __name__ == '__main__':
     
     #---load all info from VCF files
     vcf_merger = VCF(fileOps)
-    totalContacts = vcf_merger.loadVCF(folderChosen) #loads and finds duplicates
-    if totalContacts == 0:
-        menus.SimplePopup("Either no VCF files were found or no valid contacts were present in them. Please check the folder/file(s)", "Error")
+    #totalContacts, numDuplicates = vcf_merger.loadVCF(folderChosen) #loads and finds duplicates
+    #if totalContacts == 0:
+    #    menus.SimplePopup("Either no VCF files were found or no valid contacts were present in them. Please check the folder/file(s)", "Error")
     #---find indices of duplicates
-    vcf_merger.searchForDuplicateContactsBasedOnPhoneNumber()
+    #vcf_merger.searchForDuplicateContactsBasedOnPhoneNumber()
     #---allow User to merge data via GUI
+    totalContacts = 10; numDuplicates = 2; #TODO: remove this temporary override
+    if numDuplicates == 0:
+        pass #TODO: go for a direct save
+    else:
+        contactsUI = menus.ContactsChoiceGUI()    
+        contactsUI.duplicatesResolverGUI(totalContacts, numDuplicates)
