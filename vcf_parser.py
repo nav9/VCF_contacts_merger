@@ -31,7 +31,7 @@ class VCF:
         self.duplicates = [] #[[1,7,9], [2,90,340], ...] #each internal list is a bunch of indices of contacts of self.allContacts, where the phone numbers are similar. Later, we present these contacts to the User and ask them to sort it out
 
     def loadVCF(self, folderName):
-        """ Load each contact in each VCF file, and ignore exact matches to already loaded contacts """
+        """ Load each contact in each VCF file, and ignore exact matches to already loaded contacts """        
         filesWithFullPath = self.__getAllFilesToProcess(folderName)
         for aFile in filesWithFullPath:
             self.__readData(aFile) #loads each contact as a list of all components of the contact, and stores them in self.allContacts
@@ -39,7 +39,7 @@ class VCF:
         log.info(f"{self.contactsDiscarded} contacts were exact duplicates of previously loaded contacts.")
         log.info(f"So now there are {len(self.allContacts)} contacts.")
         assert(len(self.allContacts) == (self.totalContactsProcessed - self.contactsDiscarded)) #ensure that there are no contacts missed
-        self.searchForDuplicateContactsBasedOnPhoneNumber()
+        return len(self.allContacts)
 
     def searchForDuplicateContactsBasedOnPhoneNumber(self):
         indexOfDuplicates = set() #indices of contacts with similar phone numbers that were already found

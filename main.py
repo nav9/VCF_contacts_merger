@@ -28,9 +28,13 @@ if __name__ == '__main__':
     # whichFolder.showUserTheMenu(topText, bottomText)
     # folderChosen = whichFolder.getUserChoice()
     folderChosen = '/home/nav/code/VCF_contacts_merger/sample_vcf' #TODO: remove this temporary override
+    #folderChosen = '/home/nav/datasets' #TODO: remove this temporary override
     
     #---load all info from VCF files
     vcf_merger = VCF(fileOps)
-    vcf_merger.loadVCF(folderChosen)
-    #---begin searching all VCF files for duplicates
-
+    totalContacts = vcf_merger.loadVCF(folderChosen) #loads and finds duplicates
+    if totalContacts == 0:
+        menus.SimplePopup("Either no VCF files were found or no valid contacts were present in them. Please check the folder/file(s)", "Error")
+    #---find indices of duplicates
+    vcf_merger.searchForDuplicateContactsBasedOnPhoneNumber()
+    #---allow User to merge data via GUI
