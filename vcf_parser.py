@@ -26,13 +26,20 @@ class VCF:
     def __init__(self, fileOps) -> None:
         self.fileOps = fileOps
         self.allContacts = deque()
+        self.totalContactsProcessed = 0
+        self.contactsDiscarded = 0
 
     def loadVCF(self, folderName):
+        """ Load each contact in each VCF file, and ignore exact matches to already loaded contacts """
         filesWithFullPath = self.__getAllFilesToProcess(folderName)
         for aFile in filesWithFullPath:
-            self.__loadData(aFile)
+            self.__readData(aFile) #loads each contact as a list of all components of the contact, and stores them in self.allContacts
+        log.info(f"{self.totalContactsProcessed} contacts were loaded from {len(filesWithFullPath)} files.")
+        log.info(f"{self.contactsDiscarded} contacts were exact duplicates of previously loaded contacts.")
+        log.info(f"So now there are {len(self.allContacts)} contacts.")
+        assert(len(self.allContacts) == (self.totalContactsProcessed - self.contactsDiscarded)) #ensure that there are no contacts missed
 
-    def __loadData(self, filenameWithPath):
+    def __readData(self, filenameWithPath):
         lines = self.fileOps.readFromFile(filenameWithPath)
         numLines = len(lines)
         i = const.GlobalConstants.FIRST_POSITION_IN_LIST
@@ -41,21 +48,28 @@ class VCF:
         recording = False
         contactsProcessed = 0
         duplicatesFound = 0
+        numberOfBeginsDetected = 0
+        numberOfEndsDetected = 0        
         while i < numLines:#iterate the entire file
             currentline = lines[i]
             if currentline.startswith(const.Properties.BEGIN):
+                numberOfBeginsDetected += 1
                 contact = [] #create new contact
                 recording = True                          
             if recording:
                 contact.append(currentline)
             if currentline.startswith(const.Properties.END):
-                contactsProcessed = contactsProcessed + 1
+                contactsProcessed += 1; numberOfEndsDetected += 1
                 recording = False                  
-                if self.__isExactContactAlreadyPresent(contact): duplicatesFound = duplicatesFound + 1
+                if self.__isExactContactAlreadyPresent(contact): duplicatesFound += 1
                 else: self.allContacts.append(contact)
-            i = i + 1
+            i += 1
         if contactsProcessed == 0: log.warning(f"No contacts were detected in {filenameWithPath}")
         else: log.info(f"{contactsProcessed} contacts loaded ({duplicatesFound} were exact duplicates of previously loaded contacts) from {filenameWithPath}")
+        self.contactsDiscarded += duplicatesFound
+        self.totalContactsProcessed += contactsProcessed
+        if numberOfBeginsDetected != numberOfEndsDetected:
+            raise ValueError(f"File {filenameWithPath} appears to be corrupted. Number of {const.Properties.BEGIN} tags = {numberOfBeginsDetected}, but number of {const.Properties.END} = {numberOfEndsDetected}. Please examine the file or remove it from the folder.")        
 
     def __isExactContactAlreadyPresent(self, contact):
         present = False
