@@ -20,6 +20,7 @@ from loguru import logger as log
 if __name__ == '__main__':
     gui.theme('Dark grey 13')  
     fileOps = fileFolderOperations.FileOperations()
+    #TODO: check if there's a temp file and allow user to continue from there
 
     # #---ask User where the VCF files are
     # topText = ['Which folder contains the VCF files? ']        

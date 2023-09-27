@@ -1,4 +1,4 @@
-#import os
+import textwrap
 import PySimpleGUI as gui
 from programConstants import constants as const
 from loguru import logger as log
@@ -18,32 +18,57 @@ class ContactsChoiceGUI:
         self.horizontalSepLen = 90    
         self.multilineTextboxWidth = 40
         self.multilineTextboxHeight = 20
+        self.layout = []
+        self.window = None
     
     def duplicatesResolverGUI(self, totalContacts, numDuplicates):
-        layout = []
-        topText = [f"The program has {totalContacts} contacts in memory, of which {numDuplicates} appear to have duplicates. This GUI shows the unique", "contact on the right and the duplicates on the left. The contact on the right will be saved and the contact on", "the left will be ignored. You can edit the contact on the right, for example, by copying values from the left."]
+        self.layout.append([gui.Button(const.Layout.HOW_TO_USE_BUTTON, key = const.Layout.HOW_TO_USE_BUTTON)])
+        topText = [f"The program has {totalContacts} contacts in memory, of which {numDuplicates} appear to have duplicates."]        
         for s in topText:
-            layout.append([gui.Text(s, text_color = const.Layout.COLOR_GREY, justification=const.Layout.LEFT_JUSTIFY)])    
-        #layout.append([gui.HorizontalSeparator(color = gui.DEFAULT_BACKGROUND_COLOR)])
-        layout.append([gui.Text('_' * self.horizontalSepLen, justification=const.Layout.RIGHT_JUSTIFY, text_color=const.Layout.COLOR_GREY)])
-        contactColumnTitle = gui.Text("Contact to save")
+            self.layout.append([gui.Text(s, text_color = const.Layout.COLOR_GREY, justification = const.Layout.LEFT_JUSTIFY)])    
+        self.layout.append([gui.Text('_' * self.horizontalSepLen, justification = const.Layout.RIGHT_JUSTIFY, text_color = const.Layout.COLOR_GREY)])
+        contactColumnTitle = gui.Text("Contact that will be saved")
         contactsDisplay = gui.Multiline(size = (self.multilineTextboxWidth, self.multilineTextboxHeight), key = const.Layout.CONTACTS_DISPLAY_TEXTFIELD, horizontal_scroll = True)
-        duplicatesColumnTitle = gui.Text("Assumed duplicates of the contact to check")
+        duplicatesColumnTitle = gui.Text("Assumed duplicates of the contact on the right")
         duplicatesDisplay = gui.Multiline(size = (self.multilineTextboxWidth, self.multilineTextboxHeight), key = const.Layout.DUPLICATES_DISPLAY_TEXTFIELD, horizontal_scroll = True)
         leftColumn = [[duplicatesColumnTitle], [duplicatesDisplay]]
         rightColumn = [[contactColumnTitle], [contactsDisplay]]
-        layout.append([gui.Column(leftColumn), gui.Column(rightColumn)])
-        layout.append([gui.Button(const.Layout.PREV_BUTTON, key = const.Layout.PREV_BUTTON), 
-                       gui.Text(f"1 of {numDuplicates}"),
-                       gui.Button(const.Layout.NEXT_BUTTON, key=const.Layout.NEXT_BUTTON)])
-        bottomText = [f"All contacts will get saved to disk only when you click {const.Layout.SAVE_BUTTON}"]
-        for s in bottomText:
-            layout.append([gui.Text(s, text_color = const.Layout.COLOR_GREY)])  
-        layout.append([gui.Button('Save', button_color = 'black on yellow')])
+        self.layout.append([gui.Column(leftColumn), gui.Column(rightColumn)])
+        self.layout.append([gui.Button(const.Layout.PREV_BUTTON, key = const.Layout.PREV_BUTTON), 
+                            gui.Text(f"0 of {numDuplicates}", key = const.Layout.CONTACTS_COMPLETED_TEXT),
+                            gui.Button(const.Layout.NEXT_BUTTON, key = const.Layout.NEXT_BUTTON)])
+        self.layout.append([gui.Button(const.Layout.SAVE_BUTTON, button_color = 'black on yellow', key = const.Layout.SAVE_BUTTON)])
 
-        window = gui.Window('VCF duplicate find and merge', layout, grab_anywhere = False, element_justification = const.Layout.RIGHT_JUSTIFY)    
-        self.event, self.values = window.read()        
-        window.close()
+        self.window = gui.Window('VCF duplicate find and merge', self.layout, grab_anywhere = False, element_justification = const.Layout.RIGHT_JUSTIFY)    
+        self.event, self.values = self.window.read()                
+
+    def closeTheGUI(self):
+        self.window.close()
+
+    def getHelpInformation(self):
+        wrapLength = 40
+        info = ("How it works:\n"
+                "When you select a folder, this program automatically scans the folder and all subfolders, for VCF files."
+                "When it loads contacts from each file, it automatically ignores contacts that are exact duplicates of contacts"
+                f"which are already loaded. Then it creates groups of contacts that are similar, based on the last {const.GlobalConstants.NUMBER_OF_TEL_END_DIGITS} digits of the phone number."
+                "So now there are unique contacts and groups of duplicate contacts. The GUI then shows you each group of contacts, and"
+                f"you can iterate each group using the {const.Layout.NEXT_BUTTON} and {const.Layout.PREV_BUTTON} buttons."
+                "From each group, the first contact is shown on the right, and the duplicates are shown on the left. At any point of time,"
+                f"if you click the {const.Layout.SAVE_BUTTON} button, all individual contacts will get saved to a file named {const.GlobalConstants.DEFAULT_SAVE_FILENAME}{const.GlobalConstants.VCF_EXTENSION}"
+                f"and the first contact in each group of duplicates (shown on the right side), will also be saved to the file. This means that if you don't inspect all duplicates before saving"
+                ", the contacts which are not actually duplicates, and were displayed on the left side, won't be saved. Each time you click"
+                f"{const.Layout.SAVE_BUTTON}, the program will also save progress into a temporary binary file named {const.GlobalConstants.TEMP_FILENAME},"
+                "so you can close the program and re-open it later, and continue from where you left off."
+                "The program remembers the path you last specified for searching for VCF files, to avoid having to re-browse for it.\n"
+                "How to use:\n"
+                f"Use the {const.Layout.NEXT_BUTTON} and {const.Layout.PREV_BUTTON} buttons to verify if the duplicates the program detected"
+                "are indeed duplicates. You can copy and paste data between the left and right textboxes. Just make sure you don't mess up the"
+                f"standard VCF format when modifying the data. Click the {const.Layout.SAVE_BUTTON} button when done, and you'll find the merged"
+                f"contacts in the {const.GlobalConstants.DEFAULT_SAVE_FILENAME}{const.GlobalConstants.VCF_EXTENSION} file which will be in the same."
+                "folder that contains the VCF files."
+                )
+        info = textwrap.fill(info, wrapLength)
+        return info
  
 class FolderChoiceMenu:
     def __init__(self, fileOps):
