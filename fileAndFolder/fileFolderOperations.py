@@ -51,11 +51,17 @@ class FileOperations:
         return filename, fileExtension
         
     def writeLinesToFile(self, filenameWithPath, linesToWrite):#linesToWrite can be a list or set
-        fileHandle = open(filenameWithPath, 'w')
-        for line in linesToWrite:
-            fileHandle.write(line)
-            fileHandle.write("\n")
-        fileHandle.close()
+        errorSaving = None
+        try:
+            fileHandle = open(filenameWithPath, 'w')
+            for line in linesToWrite:
+                fileHandle.write(line)
+                fileHandle.write("\n")
+            fileHandle.close()
+        except Exception as e:
+            errorSaving = f"Error {str(e)} when writing {linesToWrite} to {filenameWithPath}"
+            log.error(errorSaving)
+        return errorSaving
         
     def writeKeysOfDictToFile(self, filenameWithPath, dictReference):
         fileHandle = open(filenameWithPath, 'w')

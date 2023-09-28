@@ -37,15 +37,17 @@ class VCF:
     def getNumberOfContacts(self):#this will be called from the GUI too
         return len(self.allContacts)
     
+    def getNumberOfDuplicates(self):
+        return len(self.duplicates)
+    
     def getInfoOfCurrentDuplicate(self):#this will be called from the GUI
-        return self.duplicates[self.duplicateIndexAtGUI]
+        return self.duplicates[self.duplicateIndexAtGUI], self.duplicateIndexAtGUI, self.getNumberOfDuplicates() #returns a contact like ['BEGIN:VCARD', 'VERSION:2.1', 'N:;John;;;', 'FN:John Doe', 'TEL;CELL;PREF:000000000', 'END:VCARD']
     
     def updateInfoOfCurrentDuplicate(self, updatedContact):#this will be called from the GUI
-        self.duplicates[self.duplicateIndexAtGUI] = updatedContact
+        self.duplicates[self.duplicateIndexAtGUI] = updatedContact #will have to be a list like ['BEGIN:VCARD', 'VERSION:2.1', 'N:;John;;;', 'FN:John Doe', 'TEL;CELL;PREF:000000000', 'END:VCARD']
     
     def saveContactsToDisk(self):#this will be called from the GUI
-        """ Saves the unique contacts into a VCF file """
-        successfulSave = False        
+        """ Saves the unique contacts into a VCF file """      
         contactsToSave = []
         #---collect unique contacts
         for uniqueContactIndex in self.indicesOfUniqueContacts:
@@ -55,8 +57,8 @@ class VCF:
             contactsToSave = contactsToSave + duplicate[const.GlobalConstants.FIRST_POSITION_IN_LIST] #merging each line of the contact into the contactsToSave list so that it gets written line by line
         #---write
         saveFileName = os.path.join(self.folderChosen, const.GlobalConstants.DEFAULT_SAVE_FILENAME + const.GlobalConstants.VCF_EXTENSION)
-        self.fileOps.writeLinesToFile(saveFileName, contactsToSave)
-        return successfulSave
+        errorSaving = self.fileOps.writeLinesToFile(saveFileName, contactsToSave)
+        return errorSaving #value will be None if successful save. Else, it'll contain the error message
     
     def moveDuplicateIndex(self, direction):#this will be called from the GUI
         if direction == const.GlobalConstants.FORWARD:
