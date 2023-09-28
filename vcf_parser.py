@@ -23,12 +23,13 @@ from programConstants import constants as const
 #         return similar
 
 class VCF:
-    def __init__(self, fileOps) -> None:
+    def __init__(self, fileOps, folderChosen) -> None:
         self.fileOps = fileOps
-        self.allContacts = deque()
+        self.folderChosen = folderChosen
+        self.allContacts = deque() #each contact is a list like ['BEGIN:VCARD', 'VERSION:2.1', 'N:;John;;;', 'FN:John Doe', 'TEL;CELL;PREF:000000000', 'END:VCARD']
         self.totalContactsProcessed = 0
         self.contactsDiscarded = 0
-        self.duplicates = [] #[[1,7,9], [2,90,340], ...] #each internal list is a bunch of indices of contacts of self.allContacts, where the phone numbers are similar. Later, we present these contacts to the User and ask them to sort it out
+        self.duplicates = [] #[[1,7,9], [2,90,340], ...] or [[values from self.allContacts], ...] #each internal list is a bunch of indices of contacts of self.allContacts, where the phone numbers are similar. Later, we present these contacts to the User and ask them to sort it out. After determining duplicates, the indices are replaced with actual contact's values
         self.duplicateIndexAtGUI = 0
         self.indicesOfAllDuplicates = set() #indices of contacts with similar phone numbers that were already found
         self.indicesOfUniqueContacts = set() #indices of contacts which have no duplicates
@@ -37,16 +38,24 @@ class VCF:
         return len(self.allContacts)
     
     def getInfoOfCurrentDuplicate(self):#this will be called from the GUI
-        return 
-    def updateInfoOfCurrentDuplicate(self):#this will be called from the GUI
-        return
+        return self.duplicates[self.duplicateIndexAtGUI]
+    
+    def updateInfoOfCurrentDuplicate(self, updatedContact):#this will be called from the GUI
+        self.duplicates[self.duplicateIndexAtGUI] = updatedContact
+    
     def saveContactsToDisk(self):#this will be called from the GUI
         """ Saves the unique contacts into a VCF file """
         successfulSave = False        
-        for i in range(self.getNumberOfContacts()):
-            if i in self.indicesOfUniqueContacts:
-
-
+        contactsToSave = []
+        #---collect unique contacts
+        for uniqueContactIndex in self.indicesOfUniqueContacts:
+            contactsToSave = contactsToSave + self.allContacts[uniqueContactIndex] #merging each line of the contact into the contactsToSave list so that it gets written line by line
+        #---collect the first contact in all duplicates
+        for duplicate in self.duplicates:
+            contactsToSave = contactsToSave + duplicate[const.GlobalConstants.FIRST_POSITION_IN_LIST] #merging each line of the contact into the contactsToSave list so that it gets written line by line
+        #---write
+        saveFileName = os.path.join(self.folderChosen, const.GlobalConstants.DEFAULT_SAVE_FILENAME + const.GlobalConstants.VCF_EXTENSION)
+        self.fileOps.writeLinesToFile(saveFileName, contactsToSave)
         return successfulSave
     
     def moveDuplicateIndex(self, direction):#this will be called from the GUI

@@ -33,7 +33,7 @@ def main():#Reason for a main function https://stackoverflow.com/questions/60276
     #folderChosen = '/home/nav/datasets' #TODO: remove this temporary override that was introduced for testing
     
     #---load all info from VCF files
-    vcf_merger = VCF(fileOps)
+    vcf_merger = VCF(fileOps, folderChosen)
     #totalContacts, numDuplicates = vcf_merger.loadVCF(folderChosen) #loads and finds duplicates
     #if totalContacts == 0:
     #    menus.SimplePopup("Either no VCF files were found or no valid contacts were present in them. Please check the folder/file(s)", "Error")
@@ -49,6 +49,7 @@ def main():#Reason for a main function https://stackoverflow.com/questions/60276
         contactsUI.createGUI(totalContacts, numDuplicates)
         #---loop and check the GUI for events for as long as it's open
         while True:
+            #TODO: add a function to save state of the VCF when user clicks save
             if contactsUI.checkIfNotClosedGUI(): 
                 event, values, dataFromUI = contactsUI.runEventLoop()
             else: 
