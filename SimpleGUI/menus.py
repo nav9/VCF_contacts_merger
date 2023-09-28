@@ -37,7 +37,7 @@ class ContactsChoiceGUI:
         for s in topText:
             self.layout.append([gui.Text(s, text_color = const.Layout.COLOR_GREY, justification = const.Layout.LEFT_JUSTIFY)])    
         self.layout.append([gui.Text('_' * self.horizontalSepLen, justification = const.Layout.RIGHT_JUSTIFY, text_color = const.Layout.COLOR_GREY)])
-        contactColumnTitle = gui.Text("Contact that will be saved")
+        contactColumnTitle = gui.Text("Contact(s) that will be saved")
         contactsDisplay = gui.Multiline(size = (self.multilineTextboxWidth, self.multilineTextboxHeight), key = const.Layout.CONTACTS_DISPLAY_TEXTFIELD, horizontal_scroll = True, do_not_clear = True)
         duplicatesColumnTitle = gui.Text("Assumed duplicates of the contact on the right")
         duplicatesDisplay = gui.Multiline(size = (self.multilineTextboxWidth, self.multilineTextboxHeight), key = const.Layout.DUPLICATES_DISPLAY_TEXTFIELD, horizontal_scroll = True, do_not_clear = True)
@@ -45,7 +45,7 @@ class ContactsChoiceGUI:
         rightColumn = [[contactColumnTitle], [contactsDisplay]]
         self.layout.append([gui.Column(leftColumn), gui.Column(rightColumn)])
         self.layout.append([gui.Button(const.Layout.PREV_BUTTON, key = const.Layout.PREV_BUTTON), 
-                            gui.Text(f"{self.duplicateIndexAtGUI} of {self.numDuplicates}", key = const.Layout.CONTACTS_COMPLETED_TEXT),
+                            gui.Text("", key = const.Layout.CONTACTS_COMPLETED_TEXT),
                             gui.Button(const.Layout.NEXT_BUTTON, key = const.Layout.NEXT_BUTTON)])
         self.layout.append([gui.Button(const.Layout.SAVE_BUTTON, button_color = 'black on yellow', key = const.Layout.SAVE_BUTTON)])
 
@@ -59,7 +59,12 @@ class ContactsChoiceGUI:
             self.closeWindow()  
         else:
             if event == const.Layout.HOW_TO_USE_BUTTON:
-                SimplePopup(self.__getHelpInformation(), "How to use the GUI")
+                SimplePopup(self.__getHelpInformation(), "How to use the GUI")               
+            if event == const.Layout.PREV_BUTTON or event == const.Layout.NEXT_BUTTON:
+                if event == const.Layout.NEXT_BUTTON: self.backend.moveDuplicateIndex(const.GlobalConstants.FORWARD)
+                else: self.backend.moveDuplicateIndex(const.GlobalConstants.BACKWARD)                 
+                duplicateContacts, self.duplicateIndexAtGUI = self.backend.getInfoOfCurrentDuplicate()
+                self.__displayContacts(duplicateContacts)
  
     def __displayContacts(self, contacts):
         """ Show the contacts in the left and right multiline text boxes """
@@ -73,6 +78,7 @@ class ContactsChoiceGUI:
                     self.window[const.Layout.DUPLICATES_DISPLAY_TEXTFIELD].update(self.__getContactAsString(contact))                
         else:
             log.error(f"Duplicate contact at index {self.duplicateIndexAtGUI} does not have any data")
+        self.window[const.Layout.CONTACTS_COMPLETED_TEXT].update(f"{self.duplicateIndexAtGUI + 1} of {self.numDuplicates}")
 
     def __getContactAsString(self, contact):
         s = ""
