@@ -19,9 +19,14 @@ class ContactsChoiceGUI:
         self.multilineTextboxWidth = 40
         self.multilineTextboxHeight = 20
         self.layout = []
+        self.backend = None
         self.window = None
+        self.programRunning = True
     
-    def duplicatesResolverGUI(self, totalContacts, numDuplicates):
+    def addThisBackend(self, backendRef):
+        self.backend.append(backendRef)
+
+    def createGUI(self, totalContacts, numDuplicates):
         self.layout.append([gui.Button(const.Layout.HOW_TO_USE_BUTTON, key = const.Layout.HOW_TO_USE_BUTTON)])
         topText = [f"The program has {totalContacts} contacts in memory, of which {numDuplicates} appear to have duplicates."]        
         for s in topText:
@@ -39,11 +44,20 @@ class ContactsChoiceGUI:
                             gui.Button(const.Layout.NEXT_BUTTON, key = const.Layout.NEXT_BUTTON)])
         self.layout.append([gui.Button(const.Layout.SAVE_BUTTON, button_color = 'black on yellow', key = const.Layout.SAVE_BUTTON)])
 
-        self.window = gui.Window('VCF duplicate find and merge', self.layout, grab_anywhere = False, element_justification = const.Layout.RIGHT_JUSTIFY)    
-        self.event, self.values = self.window.read()                
+        self.window = gui.Window('VCF duplicate find and merge', self.layout, grab_anywhere = False, element_justification = const.Layout.RIGHT_JUSTIFY)                 
 
-    def closeTheGUI(self):
+    def runEventLoop(self):#this function should get called repeatedly from an external while loop
+        event, values = self.window.read(timeout = const.Layout.WINDOW_WAIT_TIMEOUT_MILLISECOND) 
+        if event == gui.WIN_CLOSED or event == gui.Exit:#somehow, this line works only if placed above the check for event and values being None
+            self.closeWindow()  
+ 
+
+    def closeWindow(self):
         self.window.close()
+        self.programRunning = False
+        
+    def checkIfNotClosedGUI(self):
+        return self.programRunning
 
     def getHelpInformation(self):
         wrapLength = 40

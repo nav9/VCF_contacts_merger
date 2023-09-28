@@ -29,6 +29,33 @@ class VCF:
         self.totalContactsProcessed = 0
         self.contactsDiscarded = 0
         self.duplicates = [] #[[1,7,9], [2,90,340], ...] #each internal list is a bunch of indices of contacts of self.allContacts, where the phone numbers are similar. Later, we present these contacts to the User and ask them to sort it out
+        self.duplicateIndexAtGUI = 0
+        self.indicesOfAllDuplicates = set() #indices of contacts with similar phone numbers that were already found
+        self.indicesOfUniqueContacts = set() #indices of contacts which have no duplicates
+
+    def getNumberOfContacts(self):#this will be called from the GUI too
+        return len(self.allContacts)
+    
+    def getInfoOfCurrentDuplicate(self):#this will be called from the GUI
+        return 
+    def updateInfoOfCurrentDuplicate(self):#this will be called from the GUI
+        return
+    def saveContactsToDisk(self):#this will be called from the GUI
+        """ Saves the unique contacts into a VCF file """
+        successfulSave = False        
+        for i in range(self.getNumberOfContacts()):
+            if i in self.indicesOfUniqueContacts:
+
+
+        return successfulSave
+    
+    def moveDuplicateIndex(self, direction):#this will be called from the GUI
+        if direction == const.GlobalConstants.FORWARD:
+            if self.duplicateIndexAtGUI < len(self.duplicates) - 1:
+                self.duplicateIndexAtGUI += const.GlobalConstants.FORWARD
+        if direction == const.GlobalConstants.BACKWARD:
+            if self.duplicateIndexAtGUI > const.GlobalConstants.FIRST_POSITION_IN_LIST:
+                self.duplicateIndexAtGUI += const.GlobalConstants.BACKWARD #the value of BACKWARD is -1        
 
     def loadVCF(self, folderName):
         """ Load each contact in each VCF file, and ignore exact matches to already loaded contacts """        
@@ -37,25 +64,33 @@ class VCF:
             self.__readData(aFile) #loads each contact as a list of all components of the contact, and stores them in self.allContacts
         log.info(f"{self.totalContactsProcessed} contacts were loaded from {len(filesWithFullPath)} files.")
         log.info(f"{self.contactsDiscarded} contacts were exact duplicates of previously loaded contacts.")
-        log.info(f"So now there are {len(self.allContacts)} contacts.")
-        assert(len(self.allContacts) == (self.totalContactsProcessed - self.contactsDiscarded)) #ensure that there are no contacts missed
-        return len(self.allContacts), len(self.duplicates)
+        log.info(f"So now there are {self.getNumberOfContacts()} contacts.")
+        assert(self.getNumberOfContacts() == (self.totalContactsProcessed - self.contactsDiscarded)) #ensure that there are no contacts missed
+        return self.getNumberOfContacts(), len(self.duplicates)
 
-    def searchForDuplicateContactsBasedOnPhoneNumber(self):
-        indexOfDuplicates = set() #indices of contacts with similar phone numbers that were already found
-        for i in range(len(self.allContacts)-1):
+    def searchForDuplicateContactsBasedOnPhoneNumber(self): 
+        self.indicesOfAllDuplicates.clear()       
+        for i in range(self.getNumberOfContacts()-1):
             duplicate = []
             iPhoneNumbers = self.__getLast8digitsOfPhoneNumber(i)
-            for j in range(i+1, len(self.allContacts)):
-                if j in indexOfDuplicates: continue #skip any duplicate index that was already found                    
+            for j in range(i+1, self.getNumberOfContacts()):
+                if j in self.indicesOfAllDuplicates: continue #skip any duplicate index that was already found                    
                 else:
                     if iPhoneNumbers.intersection(self.__getLast8digitsOfPhoneNumber(j)):#common partial match of phone numbers were found
-                        indexOfDuplicates.add(j)
+                        self.indicesOfAllDuplicates.add(i)
+                        self.indicesOfAllDuplicates.add(j)
                         duplicate.append(j)
             if duplicate:#at least one duplicate found
                 duplicate.insert(const.GlobalConstants.FIRST_POSITION_IN_LIST, i)#add i to the beginning of the list
                 self.duplicates.append(duplicate)  
-        
+        self.indicesOfUniqueContacts = self.indicesOfAllDuplicates.symmetric_difference(range(self.getNumberOfContacts())) #finds indices that are not common between the two sets    
+        self.__replaceDuplicateIndicesWithActualValues()
+
+    def __replaceDuplicateIndicesWithActualValues(self):   
+        """ Replacing indices with values because the actual values are what will be shown and edited in the GUI """     
+        for i in range(len(self.duplicates)):#duplicate will be a list of indices of self.allContacts. Eg: [2,6,34]
+            self.duplicates[i] = [self.allContacts[x] for x in self.duplicates[i]]
+            
     def showDuplicateContactsFound(self):
         for duplicate in self.duplicates:
             for contact in duplicate:
@@ -89,7 +124,6 @@ class VCF:
         lines = self.fileOps.readFromFile(filenameWithPath)
         numLines = len(lines)
         i = const.GlobalConstants.FIRST_POSITION_IN_LIST
-        #allContacts = [] #stores a list of OneContact object references
         contact = list()
         recording = False
         contactsProcessed = 0

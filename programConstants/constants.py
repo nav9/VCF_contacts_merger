@@ -10,8 +10,12 @@ class GlobalConstants:
     NUMBER_OF_TEL_END_DIGITS = 8 #number of digits at the end of the telephone number to consider for matching with phone numbers of other contacts
     COLON_DELIMITER = ":"
     SEMICOLON_DELIMITER = ";"
+    SLEEP_SECONDS = 0.03 
+    FORWARD = 1 #list index update direction
+    BACKWARD = -1 #list index update direction
 
 class Layout:#these constants are kept here in case any functions outside menus.py needs access
+    WINDOW_WAIT_TIMEOUT_MILLISECOND = 100 #the amount of time the window waits for user input        
     NEXT_BUTTON = 'Next contact >'
     PREV_BUTTON = '< Previous contact'
     SAVE_BUTTON = 'Save'
@@ -22,7 +26,7 @@ class Layout:#these constants are kept here in case any functions outside menus.
     #HELP_INFO_MULTILINE = '- help info -'
     COLOR_GREY = 'grey'
     LEFT_JUSTIFY = 'left'
-    RIGHT_JUSTIFY = 'right'
+    RIGHT_JUSTIFY = 'right'    
 
 class Properties:#property names present in a VCard https://en.wikipedia.org/wiki/VCard#toc-Properties
     BEGIN = 'BEGIN'
