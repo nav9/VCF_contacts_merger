@@ -34,28 +34,29 @@ def main():#Reason for a main function https://stackoverflow.com/questions/60276
     
     #---load all info from VCF files
     vcf_merger = VCF(fileOps, folderChosen)
-    #totalContacts, numDuplicates = vcf_merger.loadVCF(folderChosen) #loads and finds duplicates
+    totalContacts, numDuplicates = vcf_merger.loadVCF(folderChosen) #loads and finds duplicates
     #if totalContacts == 0:
     #    menus.SimplePopup("Either no VCF files were found or no valid contacts were present in them. Please check the folder/file(s)", "Error")
     #---find indices of duplicates
-    #vcf_merger.searchForDuplicateContactsBasedOnPhoneNumber()
+    numDuplicates = vcf_merger.searchForDuplicateContactsBasedOnPhoneNumber()
+    log.debug(f"Number of duplicates = {numDuplicates}")
     #---allow User to merge data via GUI
-    totalContacts = 10; numDuplicates = 2; #TODO: remove this temporary override that was introduced for testing
+    #totalContacts = 10; numDuplicates = 2; #TODO: remove this temporary override that was introduced for testing
     if numDuplicates == 0:
         pass #TODO: go for a direct save and display message to User
     else:#create the GUI which allows User to examine the duplicates
         contactsUI = menus.ContactsChoiceGUI()   
-        contactsUI.addThisBackend(vcf_merger) #connect the backend to the GUI frontend
-        contactsUI.createGUI(totalContacts, numDuplicates)
+        contactsUI.addBackendOfVCF(vcf_merger) #connect the backend to the GUI frontend
+        contactsUI.createGUI()
         #---loop and check the GUI for events for as long as it's open
         while True:
             #TODO: add a function to save state of the VCF when user clicks save
             if contactsUI.checkIfNotClosedGUI(): 
-                event, values, dataFromUI = contactsUI.runEventLoop()
+                contactsUI.runEventLoop()
             else: 
                 break #exit the program
             sleep(const.GlobalConstants.SLEEP_SECONDS) #relinquish program control to the operating system, for a while. Another (probably non-blocking) wait is located in simpleGUI.py, with the self.WINDOW_WAIT_TIMEOUT_MILLISECOND
-    log.info("VCF merger has been stopped")        
+    log.info("VCF merger has stopped running")        
 
 if __name__ == '__main__':
     main()        

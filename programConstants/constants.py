@@ -13,6 +13,7 @@ class GlobalConstants:
     SLEEP_SECONDS = 0.03 
     FORWARD = 1 #list index update direction
     BACKWARD = -1 #list index update direction
+    NEWLINE = '\n'
 
 class Layout:#these constants are kept here in case any functions outside menus.py needs access
     WINDOW_WAIT_TIMEOUT_MILLISECOND = 100 #the amount of time the window waits for user input        

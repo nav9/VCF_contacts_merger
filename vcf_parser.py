@@ -37,11 +37,11 @@ class VCF:
     def getNumberOfContacts(self):#this will be called from the GUI too
         return len(self.allContacts)
     
-    def getNumberOfDuplicates(self):
+    def getNumberOfDuplicates(self):#this will be called from the GUI too
         return len(self.duplicates)
     
     def getInfoOfCurrentDuplicate(self):#this will be called from the GUI
-        return self.duplicates[self.duplicateIndexAtGUI], self.duplicateIndexAtGUI, self.getNumberOfDuplicates() #returns a contact like ['BEGIN:VCARD', 'VERSION:2.1', 'N:;John;;;', 'FN:John Doe', 'TEL;CELL;PREF:000000000', 'END:VCARD']
+        return self.duplicates[self.duplicateIndexAtGUI], self.duplicateIndexAtGUI #returns a contact like ['BEGIN:VCARD', 'VERSION:2.1', 'N:;John;;;', 'FN:John Doe', 'TEL;CELL;PREF:000000000', 'END:VCARD']
     
     def updateInfoOfCurrentDuplicate(self, updatedContact):#this will be called from the GUI
         self.duplicates[self.duplicateIndexAtGUI] = updatedContact #will have to be a list like ['BEGIN:VCARD', 'VERSION:2.1', 'N:;John;;;', 'FN:John Doe', 'TEL;CELL;PREF:000000000', 'END:VCARD']
@@ -62,7 +62,7 @@ class VCF:
     
     def moveDuplicateIndex(self, direction):#this will be called from the GUI
         if direction == const.GlobalConstants.FORWARD:
-            if self.duplicateIndexAtGUI < len(self.duplicates) - 1:
+            if self.duplicateIndexAtGUI < self.getNumberOfDuplicates() - 1:
                 self.duplicateIndexAtGUI += const.GlobalConstants.FORWARD
         if direction == const.GlobalConstants.BACKWARD:
             if self.duplicateIndexAtGUI > const.GlobalConstants.FIRST_POSITION_IN_LIST:
@@ -76,8 +76,8 @@ class VCF:
         log.info(f"{self.totalContactsProcessed} contacts were loaded from {len(filesWithFullPath)} files.")
         log.info(f"{self.contactsDiscarded} contacts were exact duplicates of previously loaded contacts.")
         log.info(f"So now there are {self.getNumberOfContacts()} contacts.")
-        assert(self.getNumberOfContacts() == (self.totalContactsProcessed - self.contactsDiscarded)) #ensure that there are no contacts missed
-        return self.getNumberOfContacts(), len(self.duplicates)
+        assert(self.getNumberOfContacts() == (self.totalContactsProcessed - self.contactsDiscarded)) #ensure that there are no contacts missed        
+        return self.getNumberOfContacts(), self.getNumberOfDuplicates()
 
     def searchForDuplicateContactsBasedOnPhoneNumber(self): 
         self.indicesOfAllDuplicates.clear()       
@@ -96,6 +96,7 @@ class VCF:
                 self.duplicates.append(duplicate)  
         self.indicesOfUniqueContacts = self.indicesOfAllDuplicates.symmetric_difference(range(self.getNumberOfContacts())) #finds indices that are not common between the two sets    
         self.__replaceDuplicateIndicesWithActualValues()
+        return self.getNumberOfDuplicates()
 
     def __replaceDuplicateIndicesWithActualValues(self):   
         """ Replacing indices with values because the actual values are what will be shown and edited in the GUI """     
