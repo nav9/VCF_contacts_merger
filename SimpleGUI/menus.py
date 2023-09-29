@@ -38,7 +38,7 @@ class ContactsChoiceGUI:
             self.layout.append([gui.Text(s, text_color = const.Layout.COLOR_GREY, justification = const.Layout.LEFT_JUSTIFY)])    
         self.layout.append([gui.Text('_' * self.horizontalSepLen, justification = const.Layout.RIGHT_JUSTIFY, text_color = const.Layout.COLOR_GREY)])
         contactColumnTitle = gui.Text("Contact(s) that will be saved")
-        contactsDisplay = gui.Multiline(size = (self.multilineTextboxWidth, self.multilineTextboxHeight), key = const.Layout.CONTACTS_DISPLAY_TEXTFIELD, horizontal_scroll = True, do_not_clear = True)
+        contactsDisplay = gui.Multiline(f"Start by clicking\n the {const.Layout.NEXT_BUTTON} button below", size = (self.multilineTextboxWidth, self.multilineTextboxHeight), key = const.Layout.CONTACTS_DISPLAY_TEXTFIELD, horizontal_scroll = True, do_not_clear = True)
         duplicatesColumnTitle = gui.Text("Assumed duplicates of the contact on the right")
         duplicatesDisplay = gui.Multiline(size = (self.multilineTextboxWidth, self.multilineTextboxHeight), key = const.Layout.DUPLICATES_DISPLAY_TEXTFIELD, horizontal_scroll = True, do_not_clear = True)
         leftColumn = [[duplicatesColumnTitle], [duplicatesDisplay]]
@@ -51,23 +51,34 @@ class ContactsChoiceGUI:
 
         self.window = gui.Window('VCF duplicate find and merge', self.layout, grab_anywhere = False, element_justification = const.Layout.RIGHT_JUSTIFY)                 
         self.window.read() #need to finalize the window like this before being able to update any element
-        self.__displayContacts(duplicateContacts)
+        self.__showContactstoUserOnGUI(duplicateContacts)
 
     def runEventLoop(self):#this function should get called repeatedly from an external while loop
-        event, values = self.window.read(timeout = const.Layout.WINDOW_WAIT_TIMEOUT_MILLISECOND) 
-        if event == gui.WIN_CLOSED or event == gui.Exit:#somehow, this line works only if placed above the check for event and values being None
+        self.event, self.values = self.window.read(timeout = const.Layout.WINDOW_WAIT_TIMEOUT_MILLISECOND) 
+        if self.event == gui.WIN_CLOSED or self.event == gui.Exit:#somehow, this line works only if placed above the check for event and values being None
             self.closeWindow()  
         else:
-            if event == const.Layout.HOW_TO_USE_BUTTON:
+            if self.event == const.Layout.HOW_TO_USE_BUTTON:
                 SimplePopup(self.__getHelpInformation(), "How to use the GUI")               
-            if event == const.Layout.PREV_BUTTON or event == const.Layout.NEXT_BUTTON:
-                if event == const.Layout.NEXT_BUTTON: self.backend.moveDuplicateIndex(const.GlobalConstants.FORWARD)
+            if self.event == const.Layout.PREV_BUTTON or self.event == const.Layout.NEXT_BUTTON:
+                self.__saveAnyContactsChangesToMemory()
+                if self.event == const.Layout.NEXT_BUTTON: self.backend.moveDuplicateIndex(const.GlobalConstants.FORWARD)
                 else: self.backend.moveDuplicateIndex(const.GlobalConstants.BACKWARD)                 
                 duplicateContacts, self.duplicateIndexAtGUI = self.backend.getInfoOfCurrentDuplicate()
-                self.__displayContacts(duplicateContacts)
+                self.__showContactstoUserOnGUI(duplicateContacts)                
  
-    def __displayContacts(self, contacts):
+    def __saveAnyContactsChangesToMemory(self):
+        """ If the user had made any changes to the unique contact or even the duplicate contact, save it to memory """
+        uniqueContact = self.values[const.Layout.CONTACTS_DISPLAY_TEXTFIELD]
+        duplicateContacts = self.values[const.Layout.DUPLICATES_DISPLAY_TEXTFIELD]
+        log.debug(f"Unique Contact {uniqueContact}\n duplicate contact {duplicateContacts}")
+        updatedContact = self.__putContactStringsIntoList(uniqueContact, duplicateContacts)
+        log.debug(f"updated contact: {updatedContact}")
+        self.backend.updateInfoOfCurrentDuplicate(updatedContact)
+
+    def __showContactstoUserOnGUI(self, contacts):
         """ Show the contacts in the left and right multiline text boxes """
+        log.debug(f"Contacts to display: {contacts}")
         firstContact = True
         if contacts:
             for contact in contacts:
@@ -80,6 +91,31 @@ class ContactsChoiceGUI:
             log.error(f"Duplicate contact at index {self.duplicateIndexAtGUI} does not have any data")
         self.window[const.Layout.CONTACTS_COMPLETED_TEXT].update(f"{self.duplicateIndexAtGUI + 1} of {self.numDuplicates}")
 
+    def __putContactStringsIntoList(self, uniqueContact, duplicateContacts):
+        """ each contact needs to be put into a list and all contact lists will be put into a list. That's how it's stored and recognized by the other functions that extract it """
+        uniqueContact = uniqueContact.split(const.GlobalConstants.NEWLINE)
+        duplicateContacts = duplicateContacts.split(const.GlobalConstants.NEWLINE)
+        return self.__extractIndividualContacts(uniqueContact + duplicateContacts) #joining both lists
+
+    def __extractIndividualContacts(self, contacts):
+        extractedContacts = []
+        contact = None
+        numBegins = 0; numEnds = 0
+        for line in contacts:
+            if line:#if the string is not empty
+                if line.startswith(const.Properties.BEGIN):
+                    contact = [] #create a new contact
+                    numBegins += 1
+                contact.append(line)
+                if line.startswith(const.Properties.END):
+                    extractedContacts.append(contact)
+                    numEnds += 1
+        if numEnds != numBegins:
+            errorMessage = f"One of the contacts is not in the right format. Please make sure that every contact starts with {const.Properties.BEGIN} and {const.Properties.END}. The problematic data is {contacts}"
+            log.error(errorMessage)
+            SimplePopup(errorMessage, "Error in contact")            
+        return extractedContacts
+    
     def __getContactAsString(self, contact):
         s = ""
         for line in contact:
