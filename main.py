@@ -21,16 +21,13 @@ from loguru import logger as log
 def main():#Reason for a main function https://stackoverflow.com/questions/60276536/why-do-we-put-a-main-function-in-python-instead-of-just-putting-the-code-direc    
     gui.theme('Dark grey 13')  
     fileOps = fileFolderOperations.FileOperations()
-    #TODO: check if there's a temp file and allow user to continue from there
 
-    # #---ask User where the VCF files are
-    # topText = ['Which folder contains the VCF files? ']        
-    # bottomText = ['Choose the folder containing all your VCF files. The program will merge', 'contacts to a new file and ask you about ambiguous contacts.', f'All subfolders will also be searched for {const.GlobalConstants.VCF_EXTENSION} files.']        
-    # whichFolder = menus.FolderChoiceMenu(fileOps)
-    # whichFolder.showUserTheMenu(topText, bottomText)
-    # folderChosen = whichFolder.getUserChoice()
-    folderChosen = '/home/nav/code/VCF_contacts_merger/sample_vcf' #TODO: remove this temporary override that was introduced for testing
-    #folderChosen = '/home/nav/datasets' #TODO: remove this temporary override that was introduced for testing
+    #---ask User where the VCF files are
+    topText = 'Which folder contains the VCF files? '
+    bottomText = f'Choose the folder containing all your {const.GlobalConstants.VCF_EXTENSION} files. The program will merge contacts to a new file and ask you about ambiguous contacts. All subfolders will also be searched for {const.GlobalConstants.VCF_EXTENSION} files.'       
+    whichFolder = menus.FolderChoiceMenu(fileOps)
+    whichFolder.showUserTheMenu("Folder Selector", topText, bottomText)
+    folderChosen = whichFolder.getUserChoice()
     programStateFile = os.path.join(folderChosen, const.GlobalConstants.PROGRAM_STATE_SAVE_FILENAME)
 
     #---load all info from VCF files

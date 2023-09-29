@@ -200,31 +200,28 @@ class FolderChoiceMenu:
     def __init__(self, fileOps):
         self.event = None
         self.values = None
+        self.wrapLength = 70
         self.horizontalSepLen = 35    
         self.fileOps = fileOps  
         self.folderNameStorageFile = const.GlobalConstants.previouslySelectedFolderForDuplicatesCheck
         self.previouslySelectedFolder = None
     
-    def showUserTheMenu(self, topText, bottomText):
+    def showUserTheMenu(self, title, topText, bottomText):
         #---choose mode of running
         layout = []
-        for s in topText:
-            layout.append([gui.Text(s, justification = 'left')])
+        layout.append([gui.Text(self.wrap(topText), justification = const.Layout.LEFT_JUSTIFY)])
         self.checkForPreviouslySelectedFolder()
         layout.append([gui.Input(), gui.FolderBrowse(initial_folder = self.previouslySelectedFolder)])
-        for s in bottomText:
-            layout.append([gui.Text(s, text_color = 'grey', justification = 'left')])        
-        layout.append([gui.Text('_' * self.horizontalSepLen, justification = 'right', text_color = 'black')])
-        layout.append([gui.Button(const.GlobalConstants.EVENT_CANCEL), gui.Button('Ok')])
-        
-        window = gui.Window('', layout, grab_anywhere = False, element_justification = 'right')    
+        layout.append([gui.Text(self.wrap(bottomText), text_color = const.Layout.COLOR_GREY, justification = const.Layout.RIGHT_JUSTIFY)])        
+        layout.append([gui.Text('_' * self.horizontalSepLen, justification = const.Layout.RIGHT_JUSTIFY, text_color = const.Layout.COLOR_BLACK)])
+        layout.append([gui.Button(const.Layout.CANCEL_BUTTON), gui.Button(const.Layout.OK_BUTTON)])        
+        window = gui.Window(title, layout, grab_anywhere = False, element_justification = const.Layout.RIGHT_JUSTIFY)    
         self.event, self.values = window.read()        
         window.close()
     
     def getUserChoice(self):
         retVal = None
-        if self.event == gui.WIN_CLOSED or self.event == const.GlobalConstants.EVENT_EXIT or self.event == const.GlobalConstants.EVENT_CANCEL or self.values[const.GlobalConstants.FIRST_POSITION_IN_LIST] == '':
-            #retVal = FileSearchModes.choice_None
+        if self.event == gui.WIN_CLOSED or self.event == const.Layout.EVENT_EXIT or self.event == const.Layout.EVENT_CANCEL or self.values[const.GlobalConstants.FIRST_POSITION_IN_LIST] == '':
             log.info('Exiting')
             exit()
         else:
@@ -255,6 +252,8 @@ class FolderChoiceMenu:
         nameAsList = [folderName] #need to convert to list, else the writing function will write each letter in a separate line
         self.fileOps.writeLinesToFile(self.folderNameStorageFile, nameAsList)
 
+    def wrap(self, text):
+        return textwrap.fill(text, self.wrapLength)
 
 class Explanation:
     def __init__(self) -> None:    
@@ -267,7 +266,7 @@ class Explanation:
                                "So now there are unique contacts and groups of duplicate contacts. The GUI then shows you each group of contacts, and "
                                f"you can iterate each group using the '{const.Layout.NEXT_BUTTON}' and '{const.Layout.PREV_BUTTON}' buttons. "
                                "From each group, the first contact is shown on the right, and the duplicates are shown on the left. At any point of time, "
-                               f"if you click the {const.Layout.SAVE_BUTTON} button, all unique contacts (won't be shown on the GUI) will get saved to a file named {const.GlobalConstants.DEFAULT_SAVE_FILENAME}{const.GlobalConstants.VCF_EXTENSION} "
+                               f"if you click the {const.Layout.SAVE_BUTTON} button, all unique contacts (won't be shown on the GUI) will get saved to a file named '{const.GlobalConstants.DEFAULT_SAVE_FILENAME}{const.GlobalConstants.VCF_EXTENSION}' "
                                f"and the first contact in each group of duplicates (shown on the right side), will also be saved to the file. This means that if you don't inspect all duplicates before saving"
                                ", the contacts which are not actually duplicates, and were displayed on the left side, won't be saved. Each time you click "
                                f"'{const.Layout.SAVE_BUTTON}', the program will also save progress into a temporary binary file named '{const.GlobalConstants.PROGRAM_STATE_SAVE_FILENAME}', "
