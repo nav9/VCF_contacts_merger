@@ -29,7 +29,7 @@ class VCF:
         self.allContacts = deque() #each contact is a list like ['BEGIN:VCARD', 'VERSION:2.1', 'N:;John;;;', 'FN:John Doe', 'TEL;CELL;PREF:000000000', 'END:VCARD']
         self.totalContactsProcessed = 0
         self.contactsDiscarded = 0
-        self.duplicates = [] #[[1,7,9], [2,90,340], ...] or [[values from self.allContacts], ...] #each internal list is a bunch of indices of contacts of self.allContacts, where the phone numbers are similar. Later, we present these contacts to the User and ask them to sort it out. After determining duplicates, the indices are replaced with actual contact's values
+        self.duplicates = [] #[[1,7,9], [2,90,340], ...] or [[[values of unique contacts from self.allContacts], [values of duplicate contacts from self.allContacts]], ...] #each internal list is a bunch of indices of contacts of self.allContacts, where the phone numbers are similar. Later, we present these contacts to the User and ask them to sort it out. After determining duplicates, the indices are replaced with actual contact's values
         self.duplicateIndexAtGUI = 0
         self.indicesOfAllDuplicates = set() #indices of contacts with similar phone numbers that were already found
         self.indicesOfUniqueContacts = set() #indices of contacts which have no duplicates
@@ -99,9 +99,22 @@ class VCF:
         return self.getNumberOfDuplicates()
 
     def __replaceDuplicateIndicesWithActualValues(self):   
-        """ Replacing indices with values because the actual values are what will be shown and edited in the GUI """     
-        for i in range(len(self.duplicates)):#duplicate will be a list of indices of self.allContacts. Eg: [2,6,34]
-            self.duplicates[i] = [self.allContacts[x] for x in self.duplicates[i]]
+        """ Replacing indices with values because the actual values are what will be shown and edited in the GUI """   
+        #The values will originally be like this: [[1,7,9,10],   [2,90,340], ...] 
+        #They need to be changed to be like this: [ [[['BEGIN:VCARD', 'FN:UniqueContact1', ...]], [[['BEGIN:VCARD', 'FN:DuplicateContact1', ...], ['BEGIN:VCARD', 'FN:DuplicateContact2', ...]]], ... ]
+        #So essentially, they become like: [[ [[1]], [[7], [9], [10]] ],    [ [[2]], [[90], [340]] ],    ... , ], but the numbers in this line are only meant to show how the original index values are represented here. In this line, in place of the numbers, the actual strings from the contacts will be present
+        for i in range(len(self.duplicates)):#duplicate will be a list of indices of self.allContacts. Eg: [2,6,34]            
+            #---take the first element from the group of duplicates
+            uniqueContact = self.duplicates[i][const.GlobalConstants.FIRST_POSITION_IN_LIST] #get the index value
+            uniqueContact = self.allContacts[uniqueContact] #get the contact from the index value. This will be a list like ['BEGIN:VCARD', 'FN:UniqueContact1', ...] 
+            #---take the remaining elements from the group of duplicates
+            duplicateContacts = []
+            for j in range(const.GlobalConstants.SECOND_POSITION_IN_LIST, len(self.duplicates[i])):
+                oneContact = self.duplicates[i][j] #get the index value
+                oneContact = self.allContacts[oneContact] #get the contact from the index value. This will be a list like ['BEGIN:VCARD', 'FN:UniqueContact1', ...] 
+                duplicateContacts.append(oneContact)
+            #---put the unique contact and the duplicate contact values into the duplicates list
+            self.duplicates[i] = [[uniqueContact], duplicateContacts]
             
     def showDuplicateContactsFound(self):
         for duplicate in self.duplicates:

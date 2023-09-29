@@ -6,7 +6,8 @@ class GlobalConstants:
     TEMP_FILENAME = "tempContacts_doNotEdit.pickle"
     #duplicateFilesFolder = os.path.join("duplicateFilesFolder", "") #The quotes at the end add an OS-specific folder slash
     previouslySelectedFolderForDuplicatesCheck = "previouslySelectedFolder.txt" #store the folder name of the folder that was last selected, so that the User does not have to re-navigate from the beginning
-    FIRST_POSITION_IN_LIST = 0    
+    FIRST_POSITION_IN_LIST = 0  
+    SECOND_POSITION_IN_LIST = 1  
     NUMBER_OF_TEL_END_DIGITS = 8 #number of digits at the end of the telephone number to consider for matching with phone numbers of other contacts
     COLON_DELIMITER = ":"
     SEMICOLON_DELIMITER = ";"

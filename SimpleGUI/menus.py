@@ -61,9 +61,14 @@ class ContactsChoiceGUI:
             if self.event == const.Layout.HOW_TO_USE_BUTTON:
                 SimplePopup(self.__getHelpInformation(), "How to use the GUI")               
             if self.event == const.Layout.PREV_BUTTON or self.event == const.Layout.NEXT_BUTTON:
-                self.__saveAnyContactsChangesToMemory()
-                if self.event == const.Layout.NEXT_BUTTON: self.backend.moveDuplicateIndex(const.GlobalConstants.FORWARD)
-                else: self.backend.moveDuplicateIndex(const.GlobalConstants.BACKWARD)                 
+                try:
+                    self.__saveAnyContactsChangesToMemory()
+                except ValueError:
+                    return #avoid advancing forward or backward if the data is corrupted. Allowing the User a chance to fix the data
+                if self.event == const.Layout.NEXT_BUTTON: 
+                    self.backend.moveDuplicateIndex(const.GlobalConstants.FORWARD)
+                else: 
+                    self.backend.moveDuplicateIndex(const.GlobalConstants.BACKWARD)                 
                 duplicateContacts, self.duplicateIndexAtGUI = self.backend.getInfoOfCurrentDuplicate()
                 self.__showContactstoUserOnGUI(duplicateContacts)                
  
@@ -79,23 +84,33 @@ class ContactsChoiceGUI:
     def __showContactstoUserOnGUI(self, contacts):
         """ Show the contacts in the left and right multiline text boxes """
         log.debug(f"Contacts to display: {contacts}")
-        firstContact = True
+        #firstContact = True
         if contacts:
-            for contact in contacts:
-                if firstContact:#show the unique contact on the right textfield
-                    self.window[const.Layout.CONTACTS_DISPLAY_TEXTFIELD].update(self.__getContactAsString(contact))
-                    firstContact = False
-                else:#show the duplicate contacts on the left textfield
-                    self.window[const.Layout.DUPLICATES_DISPLAY_TEXTFIELD].update(self.__getContactAsString(contact))                
+            uniqueContacts = self.__getContactsAsStringsForDisplay(contacts[const.GlobalConstants.FIRST_POSITION_IN_LIST])
+            duplicateContacts = self.__getContactsAsStringsForDisplay(contacts[const.GlobalConstants.SECOND_POSITION_IN_LIST])
+            self.window[const.Layout.CONTACTS_DISPLAY_TEXTFIELD].update(uniqueContacts)
+            self.window[const.Layout.DUPLICATES_DISPLAY_TEXTFIELD].update(duplicateContacts)                
+            # for contact in contacts:
+            #     if firstContact:#show the unique contact on the right textfield
+            #         self.window[const.Layout.CONTACTS_DISPLAY_TEXTFIELD].update(self.__getContactAsString(contact))
+            #         firstContact = False
+            #     else:#show the duplicate contacts on the left textfield
+            #         self.window[const.Layout.DUPLICATES_DISPLAY_TEXTFIELD].update(self.__getContactAsString(contact))                
         else:
             log.error(f"Duplicate contact at index {self.duplicateIndexAtGUI} does not have any data")
         self.window[const.Layout.CONTACTS_COMPLETED_TEXT].update(f"{self.duplicateIndexAtGUI + 1} of {self.numDuplicates}")
 
+    def __getContactsAsStringsForDisplay(self, contacts):
+        s = ""
+        for contact in contacts:
+            s += self.__getContactAsString(contact)
+        return s
+    
     def __putContactStringsIntoList(self, uniqueContact, duplicateContacts):
         """ each contact needs to be put into a list and all contact lists will be put into a list. That's how it's stored and recognized by the other functions that extract it """
         uniqueContact = uniqueContact.split(const.GlobalConstants.NEWLINE)
         duplicateContacts = duplicateContacts.split(const.GlobalConstants.NEWLINE)
-        return self.__extractIndividualContacts(uniqueContact + duplicateContacts) #joining both lists
+        return [self.__extractIndividualContacts(uniqueContact), self.__extractIndividualContacts(duplicateContacts)] #joining both lists
 
     def __extractIndividualContacts(self, contacts):
         extractedContacts = []
@@ -111,9 +126,10 @@ class ContactsChoiceGUI:
                     extractedContacts.append(contact)
                     numEnds += 1
         if numEnds != numBegins:
-            errorMessage = f"One of the contacts is not in the right format. Please make sure that every contact starts with {const.Properties.BEGIN} and {const.Properties.END}. The problematic data is {contacts}"
+            errorMessage = f"One of the contacts is not in the right format. Please make sure that every contact starts with {const.Properties.BEGIN} and {const.Properties.END}. \n\nThe problematic data is {contacts}"
             log.error(errorMessage)
-            SimplePopup(errorMessage, "Error in contact")            
+            SimplePopup(errorMessage, "Error in contact")  
+            raise ValueError(errorMessage)          
         return extractedContacts
     
     def __getContactAsString(self, contact):
@@ -154,7 +170,7 @@ class ContactsChoiceGUI:
                 )
         info = textwrap.fill(info, wrapLength)
         return info
- 
+
 class FolderChoiceMenu:
     def __init__(self, fileOps):
         self.event = None
