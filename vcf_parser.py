@@ -34,6 +34,9 @@ class VCF:
         self.indicesOfAllDuplicates = set() #indices of contacts with similar phone numbers that were already found
         self.indicesOfUniqueContacts = set() #indices of contacts which have no duplicates
 
+    def getFolderUserChose(self):#this will be called from the GUI
+        return self.folderChosen
+    
     def getNumberOfContacts(self):#this will be called from the GUI too
         return len(self.allContacts)
     
@@ -52,9 +55,10 @@ class VCF:
         #---collect unique contacts
         for uniqueContactIndex in self.indicesOfUniqueContacts:
             contactsToSave = contactsToSave + self.allContacts[uniqueContactIndex] #merging each line of the contact into the contactsToSave list so that it gets written line by line
-        #---collect the first contact in all duplicates
+        #---collect the unique contact in all duplicates
         for duplicate in self.duplicates:
-            contactsToSave = contactsToSave + duplicate[const.GlobalConstants.FIRST_POSITION_IN_LIST] #merging each line of the contact into the contactsToSave list so that it gets written line by line
+            for contact in duplicate[const.GlobalConstants.FIRST_POSITION_IN_LIST]:
+                contactsToSave = contactsToSave + contact #merging each line of the contact into the contactsToSave list so that it gets written line by line
         #---write
         saveFileName = os.path.join(self.folderChosen, const.GlobalConstants.DEFAULT_SAVE_FILENAME + const.GlobalConstants.VCF_EXTENSION)
         errorSaving = self.fileOps.writeLinesToFile(saveFileName, contactsToSave)

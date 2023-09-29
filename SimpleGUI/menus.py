@@ -7,9 +7,21 @@ from loguru import logger as log
 #-------------------- MENUS --------------------
 #-----------------------------------------------
 
-class SimplePopup:
+class SimplePopup:#https://www.pysimplegui.org/en/latest/#high-level-api-calls-popups
     def __init__(self, message, popupTitle) -> None:
         gui.Popup(message, title=popupTitle)
+
+class YesNoPopup:
+    def __init__(self, question) -> None:            
+        self.layout = [
+                        [gui.Text(question, size=(30, 3), justification='center')],
+                        [gui.Button(const.Layout.YES_BUTTON), gui.Button(const.Layout.NO_BUTTON)]
+                    ]
+    def getUserResponse(self):
+        window = gui.Window(f'Your response?', self.layout, finalize=True, modal=True, element_justification = const.Layout.RIGHT_JUSTIFY)
+        event, values = window.read()
+        window.close()
+        return event == const.Layout.YES_BUTTON
 
 class ContactsChoiceGUI:
     def __init__(self):
@@ -82,7 +94,14 @@ class ContactsChoiceGUI:
                         self.backend.moveDuplicateIndex(const.GlobalConstants.BACKWARD)                 
                     duplicateContacts, self.duplicateIndexAtGUI = self.backend.getInfoOfCurrentDuplicate()
                     self.__showContactstoUserOnGUI(duplicateContacts) 
-                    
+            if self.event == const.Layout.SAVE_BUTTON:
+                errorSaving = self.backend.saveContactsToDisk()
+                if errorSaving: 
+                    if len(errorSaving) > const.GlobalConstants.MAX_LENGTH_OF_ERROR:#truncate a long error message, but make sure it's shown fully in the log
+                        log.error(errorSaving)
+                        errorSaving = (errorSaving[:const.GlobalConstants.MAX_LENGTH_OF_ERROR] + '...') 
+                    SimplePopup(f"Could not save contacts to disk. The error is: {errorSaving}", "Error")
+                else: SimplePopup(f"Saved contacts to: {self.backend.getFolderUserChose()}{const.GlobalConstants.DEFAULT_SAVE_FILENAME}{const.GlobalConstants.VCF_EXTENSION}. Any old file with the same name is overwritten.\nContacts won't be in alphabetical order.\nProgram state should have been saved to {const.GlobalConstants.PROGRAM_STATE_SAVE_FILENAME}", "Success")
         return self.event, self.values #for the caller to know when the save button is pressed (to save program state)               
  
     def __saveAnyContactsChangesToMemory(self):
@@ -176,7 +195,7 @@ class ContactsChoiceGUI:
                 f"if you click the {const.Layout.SAVE_BUTTON} button, all individual contacts will get saved to a file named {const.GlobalConstants.DEFAULT_SAVE_FILENAME}{const.GlobalConstants.VCF_EXTENSION}"
                 f"and the first contact in each group of duplicates (shown on the right side), will also be saved to the file. This means that if you don't inspect all duplicates before saving"
                 ", the contacts which are not actually duplicates, and were displayed on the left side, won't be saved. Each time you click"
-                f"{const.Layout.SAVE_BUTTON}, the program will also save progress into a temporary binary file named {const.GlobalConstants.TEMP_FILENAME},"
+                f"{const.Layout.SAVE_BUTTON}, the program will also save progress into a temporary binary file named {const.GlobalConstants.PROGRAM_STATE_SAVE_FILENAME},"
                 "so you can close the program and re-open it later, and continue from where you left off."
                 f"The program remembers the path you last specified for searching for VCF files, to avoid having to re-browse for it.{const.GlobalConstants.NEWLINE}"
                 f"How to use:{const.GlobalConstants.NEWLINE}"
