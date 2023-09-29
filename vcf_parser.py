@@ -3,25 +3,6 @@ from loguru import logger as log
 from collections import deque
 from programConstants import constants as const
 
-# class OneContact:#stores a single contact
-#     def __init__(self) -> None:
-#         self.contact = [] #['BEGIN:VCARD', 'FN:Dr. John Doe', ...]
-#         self.possibleDuplicate = False #When the searching function goes through all contacts to find similar contacts, if it finds this contact similar to another, it'll mark this True, so that in future iterations, time is not wasted in comparing this contact with other contacts
-    
-#     def addToContact(self, line):
-#         self.contact.append(line)
-#         #TODO: extract name and phone
-
-#     def checkForSimilarity(self, anotherContact):
-#         similar = False
-#         if self.possibleDuplicate:
-#             pass
-#         else:
-#             #TODO: check for similarity
-#             if similar:
-#                 self.possibleDuplicate = True
-#         return similar
-
 class VCF:
     def __init__(self, fileOps, folderChosen) -> None:
         self.fileOps = fileOps
@@ -33,7 +14,11 @@ class VCF:
         self.duplicateIndexAtGUI = 0
         self.indicesOfAllDuplicates = set() #indices of contacts with similar phone numbers that were already found
         self.indicesOfUniqueContacts = set() #indices of contacts which have no duplicates
+        self.filesWithFullPath = None
 
+    def whichFilesWereConsideredVCF(self):#this will be called from the GUI too
+        return self.filesWithFullPath
+    
     def getFolderUserChose(self):#this will be called from the GUI
         return self.folderChosen
     
@@ -50,19 +35,22 @@ class VCF:
         self.duplicates[self.duplicateIndexAtGUI] = updatedContact #will have to be a list like ['BEGIN:VCARD', 'VERSION:2.1', 'N:;John;;;', 'FN:John Doe', 'TEL;CELL;PREF:000000000', 'END:VCARD']
     
     def saveContactsToDisk(self):#this will be called from the GUI
-        """ Saves the unique contacts into a VCF file """      
+        """ Saves the unique contacts into a VCF file """  
+        numContacts = 0    
         contactsToSave = []
         #---collect unique contacts
+        numContacts += len(self.indicesOfUniqueContacts)
         for uniqueContactIndex in self.indicesOfUniqueContacts:
             contactsToSave = contactsToSave + self.allContacts[uniqueContactIndex] #merging each line of the contact into the contactsToSave list so that it gets written line by line
         #---collect the unique contact in all duplicates
         for duplicate in self.duplicates:
             for contact in duplicate[const.GlobalConstants.FIRST_POSITION_IN_LIST]:
+                numContacts += 1
                 contactsToSave = contactsToSave + contact #merging each line of the contact into the contactsToSave list so that it gets written line by line
         #---write
         saveFileName = os.path.join(self.folderChosen, const.GlobalConstants.DEFAULT_SAVE_FILENAME + const.GlobalConstants.VCF_EXTENSION)
         errorSaving = self.fileOps.writeLinesToFile(saveFileName, contactsToSave)
-        return errorSaving #value will be None if successful save. Else, it'll contain the error message
+        return errorSaving, numContacts #value will be None if successful save. Else, it'll contain the error message
     
     def moveDuplicateIndex(self, direction):#this will be called from the GUI
         if direction == const.GlobalConstants.FORWARD:
@@ -74,10 +62,10 @@ class VCF:
 
     def loadVCF(self, folderName):
         """ Load each contact in each VCF file, and ignore exact matches to already loaded contacts """        
-        filesWithFullPath = self.__getAllFilesToProcess(folderName)
-        for aFile in filesWithFullPath:
+        self.filesWithFullPath = self.__getAllFilesToProcess(folderName)
+        for aFile in self.filesWithFullPath:
             self.__readData(aFile) #loads each contact as a list of all components of the contact, and stores them in self.allContacts
-        log.info(f"{self.totalContactsProcessed} contacts were loaded from {len(filesWithFullPath)} files.")
+        log.info(f"{self.totalContactsProcessed} contacts were loaded from {len(self.filesWithFullPath)} files.")
         log.info(f"{self.contactsDiscarded} contacts were exact duplicates of previously loaded contacts.")
         log.info(f"So now there are {self.getNumberOfContacts()} contacts.")
         assert(self.getNumberOfContacts() == (self.totalContactsProcessed - self.contactsDiscarded)) #ensure that there are no contacts missed        

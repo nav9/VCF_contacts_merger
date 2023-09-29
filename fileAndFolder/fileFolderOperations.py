@@ -152,7 +152,3 @@ class FileOperations:
     
     def getListOfSubfoldersInThisFolder(self, folderNameWithPath):
         return next(os.walk(folderNameWithPath))[self.SUBDIRECTORIES]
-    
-
-        
-    

@@ -21,18 +21,6 @@ class YesNoPopup:
         userChoice = gui.popup_yes_no(message, title=popupTitle)
         return userChoice == const.Layout.YES_BUTTON
 
-# class YesNoPopup:
-#     def __init__(self, question) -> None:            
-#         self.layout = [
-#                         [gui.Text(question, size=(30, 3), justification='center')],
-#                         [gui.Button(const.Layout.YES_BUTTON), gui.Button(const.Layout.NO_BUTTON)]
-#                     ]
-#     def getUserResponse(self):
-#         window = gui.Window(f'Your response?', self.layout, finalize=True, modal=True, element_justification = const.Layout.RIGHT_JUSTIFY)
-#         event, values = window.read()
-#         window.close()
-#         return event == const.Layout.YES_BUTTON
-
 class ContactsChoiceGUI:
     def __init__(self):
         self.event = None
@@ -55,8 +43,9 @@ class ContactsChoiceGUI:
     def createGUI(self):
         totalContacts = self.backend.getNumberOfContacts()
         self.numDuplicates = self.backend.getNumberOfDuplicates()        
+        numFiles = len(self.backend.whichFilesWereConsideredVCF())
         self.layout.append([gui.Button(const.Layout.EXPLANATION_BUTTON, key = const.Layout.EXPLANATION_BUTTON)])
-        topText = [f"The program has {totalContacts} contacts in memory, of which {self.numDuplicates} appear to have duplicates."]        
+        topText = [f"{numFiles} {const.GlobalConstants.VCF_EXTENSION} files considered. The program has {totalContacts} contacts in memory, of which {self.numDuplicates} appear to have duplicates."]        
         for s in topText:
             self.layout.append([gui.Text(s, text_color = const.Layout.COLOR_GREY, justification = const.Layout.LEFT_JUSTIFY)])    
         self.layout.append([gui.Text('_' * self.horizontalSepLen, justification = const.Layout.RIGHT_JUSTIFY, text_color = const.Layout.COLOR_GREY)])
@@ -75,7 +64,6 @@ class ContactsChoiceGUI:
                             gui.Text("", key = const.Layout.CONTACTS_COMPLETED_TEXT),
                             gui.Button(const.Layout.NEXT_BUTTON, key = const.Layout.NEXT_BUTTON)])
         self.layout.append([gui.Button(const.Layout.SAVE_BUTTON, key = const.Layout.SAVE_BUTTON)])
-        #self.layout.append([gui.Button(const.Layout.SAVE_BUTTON, button_color = 'black on yellow', key = const.Layout.SAVE_BUTTON)])
 
         self.window = gui.Window('VCF duplicate find and merge', self.layout, grab_anywhere = False, element_justification = const.Layout.RIGHT_JUSTIFY)                 
         #self.window.read() #need to finalize the window like this before being able to update any element        
@@ -106,13 +94,13 @@ class ContactsChoiceGUI:
                     duplicateContacts, self.duplicateIndexAtGUI = self.backend.getInfoOfCurrentDuplicate()
                     self.__showContactstoUserOnGUI(duplicateContacts) 
             if self.event == const.Layout.SAVE_BUTTON:
-                errorSaving = self.backend.saveContactsToDisk()
+                errorSaving, numContacts = self.backend.saveContactsToDisk()
                 if errorSaving: 
                     if len(errorSaving) > const.GlobalConstants.MAX_LENGTH_OF_ERROR:#truncate a long error message, but make sure it's shown fully in the log
                         log.error(errorSaving)
                         errorSaving = (errorSaving[:const.GlobalConstants.MAX_LENGTH_OF_ERROR] + '...') 
                     SimplePopup(f"Could not save contacts to disk. The error is: {errorSaving}", "Error")
-                else: SimplePopup(f"Saved contacts to: {self.backend.getFolderUserChose()}{const.GlobalConstants.DEFAULT_SAVE_FILENAME}{const.GlobalConstants.VCF_EXTENSION}. Any old file with the same name is overwritten.\nContacts won't be in alphabetical order.\nProgram state should have been saved to {const.GlobalConstants.PROGRAM_STATE_SAVE_FILENAME}", "Success")
+                else: SimplePopup(f"Saved {numContacts} contacts to: {self.backend.getFolderUserChose()}{const.GlobalConstants.DEFAULT_SAVE_FILENAME}{const.GlobalConstants.VCF_EXTENSION}. Any old file with the same name is overwritten.\nContacts won't be in alphabetical order.\nProgram state should have been saved to {const.GlobalConstants.PROGRAM_STATE_SAVE_FILENAME}", "Success")
         return self.event, self.values #for the caller to know when the save button is pressed (to save program state)               
  
     def __saveAnyContactsChangesToMemory(self):
@@ -131,18 +119,11 @@ class ContactsChoiceGUI:
     def __showContactstoUserOnGUI(self, contacts):
         """ Show the contacts in the left and right multiline text boxes """
         log.debug(f"Contacts to display: {contacts}")
-        #firstContact = True
         if contacts:
             uniqueContacts = self.__getContactsAsStringsForDisplay(contacts[const.GlobalConstants.FIRST_POSITION_IN_LIST])
             duplicateContacts = self.__getContactsAsStringsForDisplay(contacts[const.GlobalConstants.SECOND_POSITION_IN_LIST])
             self.window[const.Layout.CONTACTS_DISPLAY_TEXTFIELD].update(uniqueContacts)
-            self.window[const.Layout.DUPLICATES_DISPLAY_TEXTFIELD].update(duplicateContacts)                
-            # for contact in contacts:
-            #     if firstContact:#show the unique contact on the right textfield
-            #         self.window[const.Layout.CONTACTS_DISPLAY_TEXTFIELD].update(self.__getContactAsString(contact))
-            #         firstContact = False
-            #     else:#show the duplicate contacts on the left textfield
-            #         self.window[const.Layout.DUPLICATES_DISPLAY_TEXTFIELD].update(self.__getContactAsString(contact))                
+            self.window[const.Layout.DUPLICATES_DISPLAY_TEXTFIELD].update(duplicateContacts)                            
         else:
             log.error(f"Duplicate contact at index {self.duplicateIndexAtGUI} does not have any data")
         self.window[const.Layout.CONTACTS_COMPLETED_TEXT].update(f"{self.duplicateIndexAtGUI + 1} of {self.numDuplicates}")
@@ -221,7 +202,9 @@ class FolderChoiceMenu:
     
     def getUserChoice(self):
         retVal = None
-        if self.event == gui.WIN_CLOSED or self.event == const.Layout.EVENT_EXIT or self.event == const.Layout.EVENT_CANCEL or self.values[const.GlobalConstants.FIRST_POSITION_IN_LIST] == '':
+        if self.event == gui.WIN_CLOSED or self.event == const.Layout.EVENT_EXIT \
+                                        or self.event == const.Layout.EVENT_CANCEL \
+                                        or self.values[const.GlobalConstants.FIRST_POSITION_IN_LIST] == '':
             log.info('Exiting')
             exit()
         else:
@@ -262,7 +245,7 @@ class Explanation:
         Explain = namedtuple("Explain", "heading elaboration")
         howItWorks = self.wrap("When you select a folder, this program automatically scans the folder and all subfolders, for VCF files. "
                                "When it loads contacts from each file, it automatically ignores contacts that are exact duplicates of contacts "
-                               f"which are already loaded. Then it creates groups of contacts that are similar, based on the last {const.GlobalConstants.NUMBER_OF_TEL_END_DIGITS} digits of the phone number. "
+                               f"which are already loaded. Then it creates groups of contacts that are similar, based on the last {const.GlobalConstants.NUMBER_OF_TEL_END_DIGITS} characters in the rows of the phone number. "
                                "So now there are unique contacts and groups of duplicate contacts. The GUI then shows you each group of contacts, and "
                                f"you can iterate each group using the '{const.Layout.NEXT_BUTTON}' and '{const.Layout.PREV_BUTTON}' buttons. "
                                "From each group, the first contact is shown on the right, and the duplicates are shown on the left. At any point of time, "

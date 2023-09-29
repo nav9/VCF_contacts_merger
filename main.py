@@ -13,17 +13,18 @@ from SimpleGUI import menus
 from vcf_parser import VCF
 from programConstants import constants as const
 from loguru import logger as log
-#log.add("logs.log", rotation="1 week")    # Once the file is too old, it's rotated
+
+log.add("logs.log", rotation="1 week")    # Once the file is too old, it's rotated
 #logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
-#log.remove() #removes the old handler which has DEBUG as the default log level
-#log.add(sys.stdout, level="INFO") #add a new handler with INFO as the log level. You can also use
+log.remove() #removes the old handler which has DEBUG as the default log level
+log.add(sys.stdout, level="INFO") #add a new handler with INFO as the log level. You can also use
 
 def main():#Reason for a main function https://stackoverflow.com/questions/60276536/why-do-we-put-a-main-function-in-python-instead-of-just-putting-the-code-direc    
     gui.theme('Dark grey 13')  
     fileOps = fileFolderOperations.FileOperations()
 
     #---ask User where the VCF files are
-    topText = 'Which folder contains the VCF files? '
+    topText = f'Which folder has files with names ending with {const.GlobalConstants.VCF_EXTENSION}? '
     bottomText = f'Choose the folder containing all your {const.GlobalConstants.VCF_EXTENSION} files. The program will merge contacts to a new file and ask you about ambiguous contacts. All subfolders will also be searched for {const.GlobalConstants.VCF_EXTENSION} files.'       
     whichFolder = menus.FolderChoiceMenu(fileOps)
     whichFolder.showUserTheMenu("Folder Selector", topText, bottomText)
@@ -49,10 +50,17 @@ def main():#Reason for a main function https://stackoverflow.com/questions/60276
         #---find indices of duplicates
         numDuplicates = vcf_merger.searchForDuplicateContactsBasedOnPhoneNumber()
         log.debug(f"Number of duplicates = {numDuplicates}")
+    filesConsidered = vcf_merger.whichFilesWereConsideredVCF()
     #---allow User to merge data via GUI if duplicates are found
     if numDuplicates == 0:
-        vcf_merger.saveContactsToDisk()
-        menus.SimplePopup(f"No duplicates found. Saved merged contacts to: {vcf_merger.getFolderUserChose()}{const.GlobalConstants.DEFAULT_SAVE_FILENAME}{const.GlobalConstants.VCF_EXTENSION}. Any old file with the same name is overwritten.\nContacts won't necessarily be in alphabetical order.", "Success")
+        errorSaving, numContacts = vcf_merger.saveContactsToDisk()
+        if errorSaving: 
+            if len(errorSaving) > const.GlobalConstants.MAX_LENGTH_OF_ERROR:#truncate a long error message, but make sure it's shown fully in the log
+                log.error(errorSaving)
+                errorSaving = (errorSaving[:const.GlobalConstants.MAX_LENGTH_OF_ERROR] + '...') 
+            menus.SimplePopup(f"Could not save contacts to disk. The error is: {errorSaving}", "Error")        
+        else:
+            menus.SimplePopup(f"{len(filesConsidered)} files examined. No duplicates found that need to be examined by you. Saved {numContacts} merged contacts to: {vcf_merger.getFolderUserChose()}{const.GlobalConstants.DEFAULT_SAVE_FILENAME}{const.GlobalConstants.VCF_EXTENSION}. Any old file with the same name is overwritten.\nContacts won't necessarily be in alphabetical order.", "Success")
     else:#create the GUI which allows User to examine the duplicates
         contactsUI = menus.ContactsChoiceGUI()   
         contactsUI.addBackendOfVCF(vcf_merger) #connect the backend to the GUI frontend
