@@ -45,7 +45,7 @@ class ContactsChoiceGUI:
         self.numDuplicates = self.backend.getNumberOfDuplicates()        
         numFiles = len(self.backend.whichFilesWereConsideredVCF())
         self.layout.append([gui.Button(const.Layout.EXPLANATION_BUTTON, key = const.Layout.EXPLANATION_BUTTON)])
-        topText = [f"{numFiles} {const.GlobalConstants.VCF_EXTENSION} files considered. The program has {totalContacts} contacts in memory, of which {self.numDuplicates} appear to have duplicates."]        
+        topText = [f"From {numFiles} files, the program loaded {totalContacts} non-repeating contacts, of which {self.numDuplicates} appear to have duplicates."]        
         for s in topText:
             self.layout.append([gui.Text(s, text_color = const.Layout.COLOR_GREY, justification = const.Layout.LEFT_JUSTIFY)])    
         self.layout.append([gui.Text('_' * self.horizontalSepLen, justification = const.Layout.RIGHT_JUSTIFY, text_color = const.Layout.COLOR_GREY)])

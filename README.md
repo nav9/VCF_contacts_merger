@@ -1,3 +1,5 @@
+![Alt text](gallery/GUI1.png?raw=true "The VCF duplicate examiner GUI")  
+  
 # VCF_contacts_merger
 A simple tool to help merge multiple Virtual Contact File (VCF) files. These are the vCard files used in smartphones.  
 It automatically finds unique contacts and displays duplicate contacts for you to inspect.  

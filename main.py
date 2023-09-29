@@ -38,8 +38,13 @@ def main():#Reason for a main function https://stackoverflow.com/questions/60276
     if fileOps.isValidFile(programStateFile):
         userChoice = menus.YesNoPopup()
         if userChoice.getUserResponse("Found a previous program state. Load it?", 'Your response?'):
-            vcf_merger = loadProgramStateFromDisk(programStateFile, fileOps)
-            numDuplicates = vcf_merger.getNumberOfDuplicates()
+            try:
+                vcf_merger = loadProgramStateFromDisk(programStateFile, fileOps)
+                numDuplicates = vcf_merger.getNumberOfDuplicates()
+            except Exception as e:
+                log.error(f"Error loading {programStateFile}: {str(e)}")
+                menus.SimplePopup(f"Unfortunately, there's an error loading {programStateFile}. Please delete it and restart the program.")
+                exit()
     #-not loading previous program state or this is a new run
     if not vcf_merger:
         vcf_merger = VCF(fileOps, folderChosen)
