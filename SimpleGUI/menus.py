@@ -18,6 +18,7 @@ class ContactsChoiceGUI:
         self.horizontalSepLen = 90    
         self.multilineTextboxWidth = 40
         self.multilineTextboxHeight = 20
+        self.multilineWrapLength = 47
         self.layout = []
         self.backend = None
         self.window = None
@@ -38,16 +39,21 @@ class ContactsChoiceGUI:
             self.layout.append([gui.Text(s, text_color = const.Layout.COLOR_GREY, justification = const.Layout.LEFT_JUSTIFY)])    
         self.layout.append([gui.Text('_' * self.horizontalSepLen, justification = const.Layout.RIGHT_JUSTIFY, text_color = const.Layout.COLOR_GREY)])
         contactColumnTitle = gui.Text("Contact(s) that will be saved")
-        contactsDisplay = gui.Multiline(f"Start by clicking\n the {const.Layout.NEXT_BUTTON} button below", size = (self.multilineTextboxWidth, self.multilineTextboxHeight), key = const.Layout.CONTACTS_DISPLAY_TEXTFIELD, horizontal_scroll = True, do_not_clear = True)
-        duplicatesColumnTitle = gui.Text("Assumed duplicates of the contact on the right")
-        duplicatesDisplay = gui.Multiline(size = (self.multilineTextboxWidth, self.multilineTextboxHeight), key = const.Layout.DUPLICATES_DISPLAY_TEXTFIELD, horizontal_scroll = True, do_not_clear = True)
+        contactsColumnDefaultText = textwrap.fill(f"Select contacts by dragging the mouse pointer and cut / copy / paste using the usual Ctrl+x / Ctrl+c / Ctrl+v. Contacts in this column will be saved to disk when you click the {const.Layout.SAVE_BUTTON} button.", self.multilineWrapLength)
+        contactsColumnDefaultText += "\n\n" + textwrap.fill(f"Start examining the contacts by clicking the {const.Layout.NEXT_BUTTON} button below", self.multilineWrapLength)
+        contactsDisplay = gui.Multiline(contactsColumnDefaultText, size = (self.multilineTextboxWidth, self.multilineTextboxHeight), key = const.Layout.CONTACTS_DISPLAY_TEXTFIELD, horizontal_scroll = True, do_not_clear = True)        
+        duplicatesColumnTitle = gui.Text("Duplicates")
+        duplicatesColumnDefaultText = textwrap.fill(f"This column will display the assumed duplicates of the contact(s) shown in the other column. Any text in this 'Duplicates' column will not be saved to disk.", self.multilineWrapLength)
+        duplicatesColumnDefaultText += "\n\n" + textwrap.fill(f"The program has {totalContacts} contacts in memory, of which {self.numDuplicates} appear to have duplicates.", self.multilineWrapLength)
+        duplicatesDisplay = gui.Multiline(duplicatesColumnDefaultText, size = (self.multilineTextboxWidth, self.multilineTextboxHeight), key = const.Layout.DUPLICATES_DISPLAY_TEXTFIELD, horizontal_scroll = True, do_not_clear = True)
         leftColumn = [[duplicatesColumnTitle], [duplicatesDisplay]]
         rightColumn = [[contactColumnTitle], [contactsDisplay]]
         self.layout.append([gui.Column(leftColumn), gui.Column(rightColumn)])
         self.layout.append([gui.Button(const.Layout.PREV_BUTTON, key = const.Layout.PREV_BUTTON), 
                             gui.Text("", key = const.Layout.CONTACTS_COMPLETED_TEXT),
                             gui.Button(const.Layout.NEXT_BUTTON, key = const.Layout.NEXT_BUTTON)])
-        self.layout.append([gui.Button(const.Layout.SAVE_BUTTON, button_color = 'black on yellow', key = const.Layout.SAVE_BUTTON)])
+        self.layout.append([gui.Button(const.Layout.SAVE_BUTTON, key = const.Layout.SAVE_BUTTON)])
+        #self.layout.append([gui.Button(const.Layout.SAVE_BUTTON, button_color = 'black on yellow', key = const.Layout.SAVE_BUTTON)])
 
         self.window = gui.Window('VCF duplicate find and merge', self.layout, grab_anywhere = False, element_justification = const.Layout.RIGHT_JUSTIFY)                 
         self.window.read() #need to finalize the window like this before being able to update any element
@@ -70,7 +76,8 @@ class ContactsChoiceGUI:
                 else: 
                     self.backend.moveDuplicateIndex(const.GlobalConstants.BACKWARD)                 
                 duplicateContacts, self.duplicateIndexAtGUI = self.backend.getInfoOfCurrentDuplicate()
-                self.__showContactstoUserOnGUI(duplicateContacts)                
+                self.__showContactstoUserOnGUI(duplicateContacts) 
+        return self.event, self.values #for the caller to know when the save button is pressed (to save program state)               
  
     def __saveAnyContactsChangesToMemory(self):
         """ If the user had made any changes to the unique contact or even the duplicate contact, save it to memory """
@@ -125,10 +132,10 @@ class ContactsChoiceGUI:
                 if line.startswith(const.Properties.END):
                     extractedContacts.append(contact)
                     numEnds += 1
-        if numEnds != numBegins:
-            errorMessage = f"One of the contacts is not in the right format. Please make sure that every contact starts with {const.Properties.BEGIN} and {const.Properties.END}. \n\nThe problematic data is {contacts}"
+        if numEnds != numBegins:#TODO: more robust data checking could be done based on the VCard version number and required properties
+            errorMessage = f"One of the contacts is not in the right format. Please make sure that every contact starts with {const.Properties.BEGIN} and ends with {const.Properties.END}.\n\n Staying at the current contact to allow you a chance to fix it. \n\nThe problematic data is {contacts}"
             log.error(errorMessage)
-            SimplePopup(errorMessage, "Error in contact")  
+            SimplePopup(errorMessage, "Data corruption")  
             raise ValueError(errorMessage)          
         return extractedContacts
     
