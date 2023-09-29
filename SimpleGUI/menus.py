@@ -68,21 +68,21 @@ class ContactsChoiceGUI:
             if self.event == const.Layout.PREV_BUTTON or self.event == const.Layout.NEXT_BUTTON:
                 if self.firstTimeClickingNextPrev:
                     self.__clearBothColumns()
-                    #duplicateContacts, self.duplicateIndexAtGUI = self.backend.getInfoOfCurrentDuplicate()
-                    #self.__showContactstoUserOnGUI(duplicateContacts)                    
-                try:
-                    if not self.firstTimeClickingNextPrev:
+                    duplicateContacts, self.duplicateIndexAtGUI = self.backend.getInfoOfCurrentDuplicate()
+                    self.__showContactstoUserOnGUI(duplicateContacts)                    
+                    self.firstTimeClickingNextPrev = False
+                else:
+                    try:
                         self.__saveAnyContactsChangesToMemory()
-                except ValueError:
-                    self.firstTimeClickingNextPrev = False #to prevent any bugs from not having set this value
-                    return #avoid advancing forward or backward if the data is corrupted. Allowing the User a chance to fix the data
-                if self.event == const.Layout.NEXT_BUTTON: 
-                    self.backend.moveDuplicateIndex(const.GlobalConstants.FORWARD)
-                else: 
-                    self.backend.moveDuplicateIndex(const.GlobalConstants.BACKWARD)                 
-                duplicateContacts, self.duplicateIndexAtGUI = self.backend.getInfoOfCurrentDuplicate()
-                self.__showContactstoUserOnGUI(duplicateContacts) 
-                self.firstTimeClickingNextPrev = False #this needed to be placed here to allow for the "if not self.firstTimeClickingNextPrev:" check above
+                    except ValueError:
+                        return #avoid advancing forward or backward if the data is corrupted. Allowing the User a chance to fix the data
+                    if self.event == const.Layout.NEXT_BUTTON: 
+                        self.backend.moveDuplicateIndex(const.GlobalConstants.FORWARD)
+                    else: 
+                        self.backend.moveDuplicateIndex(const.GlobalConstants.BACKWARD)                 
+                    duplicateContacts, self.duplicateIndexAtGUI = self.backend.getInfoOfCurrentDuplicate()
+                    self.__showContactstoUserOnGUI(duplicateContacts) 
+                    
         return self.event, self.values #for the caller to know when the save button is pressed (to save program state)               
  
     def __saveAnyContactsChangesToMemory(self):
