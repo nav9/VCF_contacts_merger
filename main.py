@@ -38,10 +38,11 @@ def main():#Reason for a main function https://stackoverflow.com/questions/60276
     numDuplicates = 0
     #-check if an already saved program state is present, and whether the User would like to load from it    
     if fileOps.isValidFile(programStateFile):
-        userChoice = menus.YesNoPopup("Found a previous program state. Load it?")
-        if userChoice.getUserResponse():
+        userChoice = menus.YesNoPopup()
+        if userChoice.getUserResponse("Found a previous program state. Load it?", 'Your response?'):
             vcf_merger = loadProgramStateFromDisk(programStateFile, fileOps)
             numDuplicates = vcf_merger.getNumberOfDuplicates()
+    #-not loading previous program state or this is a new run
     if not vcf_merger:
         vcf_merger = VCF(fileOps, folderChosen)
         totalContacts, numDuplicates = vcf_merger.loadVCF(folderChosen) #loads and finds duplicates

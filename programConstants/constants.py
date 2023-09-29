@@ -25,6 +25,7 @@ class Layout:#these constants are kept here in case any functions outside menus.
     EXPLANATION_BUTTON = 'Explanation'
     YES_BUTTON = 'Yes'
     NO_BUTTON = 'No'
+    
     CONTACTS_DISPLAY_TEXTFIELD = '- contactsDisplay -'
     DUPLICATES_DISPLAY_TEXTFIELD = '- duplicatesDisplay -'
     CONTACTS_COMPLETED_TEXT = '- contactsCompleted -'

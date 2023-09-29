@@ -7,21 +7,30 @@ from loguru import logger as log
 #-------------------- MENUS --------------------
 #-----------------------------------------------
 
-class SimplePopup:#https://www.pysimplegui.org/en/latest/#high-level-api-calls-popups
+class SimplePopup:
     def __init__(self, message, popupTitle) -> None:
-        gui.Popup(message, title=popupTitle)
+        gui.popup_ok(message, title=popupTitle)
 
 class YesNoPopup:
-    def __init__(self, question) -> None:            
-        self.layout = [
-                        [gui.Text(question, size=(30, 3), justification='center')],
-                        [gui.Button(const.Layout.YES_BUTTON), gui.Button(const.Layout.NO_BUTTON)]
-                    ]
-    def getUserResponse(self):
-        window = gui.Window(f'Your response?', self.layout, finalize=True, modal=True, element_justification = const.Layout.RIGHT_JUSTIFY)
-        event, values = window.read()
-        window.close()
-        return event == const.Layout.YES_BUTTON
+    def __init__(self) -> None:
+        pass
+
+    def getUserResponse(self, message, popupTitle):
+        """ returns True if user chooses Yes. Else, returns False """
+        userChoice = gui.popup_yes_no(message, title=popupTitle)
+        return userChoice == const.Layout.YES_BUTTON
+
+# class YesNoPopup:
+#     def __init__(self, question) -> None:            
+#         self.layout = [
+#                         [gui.Text(question, size=(30, 3), justification='center')],
+#                         [gui.Button(const.Layout.YES_BUTTON), gui.Button(const.Layout.NO_BUTTON)]
+#                     ]
+#     def getUserResponse(self):
+#         window = gui.Window(f'Your response?', self.layout, finalize=True, modal=True, element_justification = const.Layout.RIGHT_JUSTIFY)
+#         event, values = window.read()
+#         window.close()
+#         return event == const.Layout.YES_BUTTON
 
 class ContactsChoiceGUI:
     def __init__(self):
@@ -208,6 +217,7 @@ class ContactsChoiceGUI:
         info = textwrap.fill(info, wrapLength)
         return info
 
+#TODO: Could simplify using gui.popup_get_file (https://www.tutorialspoint.com/pysimplegui/pysimplegui_popup_windows.htm)
 class FolderChoiceMenu:
     def __init__(self, fileOps):
         self.event = None
@@ -267,3 +277,14 @@ class FolderChoiceMenu:
         nameAsList = [folderName] #need to convert to list, else the writing function will write each letter in a separate line
         self.fileOps.writeLinesToFile(self.folderNameStorageFile, nameAsList)
 
+# class Explanation:
+#     def __init__(self, question) -> None:            
+#         self.layout = [
+#                         [gui.Text(question, size=(30, 3), justification='center')],
+#                         [gui.Button(const.Layout.)]
+#                     ]
+#     def getUserResponse(self):
+#         window = gui.Window(f'Your response?', self.layout, finalize=True, modal=True, element_justification = const.Layout.RIGHT_JUSTIFY)
+#         event, values = window.read()
+#         window.close()
+#         return event == const.Layout.YES_BUTTON
