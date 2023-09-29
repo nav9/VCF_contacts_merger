@@ -25,15 +25,15 @@ class ContactsChoiceGUI:
         self.programRunning = True
         self.duplicateIndexAtGUI = None
         self.numDuplicates = None
+        self.firstTimeClickingNextPrev = True
     
     def addBackendOfVCF(self, backendRef):
         self.backend = backendRef
 
     def createGUI(self):
         totalContacts = self.backend.getNumberOfContacts()
-        self.numDuplicates = self.backend.getNumberOfDuplicates()
-        duplicateContacts, self.duplicateIndexAtGUI = self.backend.getInfoOfCurrentDuplicate()
-        self.layout.append([gui.Button(const.Layout.HOW_TO_USE_BUTTON, key = const.Layout.HOW_TO_USE_BUTTON)])
+        self.numDuplicates = self.backend.getNumberOfDuplicates()        
+        self.layout.append([gui.Button(const.Layout.EXPLANATION_BUTTON, key = const.Layout.EXPLANATION_BUTTON)])
         topText = [f"The program has {totalContacts} contacts in memory, of which {self.numDuplicates} appear to have duplicates."]        
         for s in topText:
             self.layout.append([gui.Text(s, text_color = const.Layout.COLOR_GREY, justification = const.Layout.LEFT_JUSTIFY)])    
@@ -56,20 +56,25 @@ class ContactsChoiceGUI:
         #self.layout.append([gui.Button(const.Layout.SAVE_BUTTON, button_color = 'black on yellow', key = const.Layout.SAVE_BUTTON)])
 
         self.window = gui.Window('VCF duplicate find and merge', self.layout, grab_anywhere = False, element_justification = const.Layout.RIGHT_JUSTIFY)                 
-        self.window.read() #need to finalize the window like this before being able to update any element
-        self.__showContactstoUserOnGUI(duplicateContacts)
+        #self.window.read() #need to finalize the window like this before being able to update any element        
 
     def runEventLoop(self):#this function should get called repeatedly from an external while loop
         self.event, self.values = self.window.read(timeout = const.Layout.WINDOW_WAIT_TIMEOUT_MILLISECOND) 
         if self.event == gui.WIN_CLOSED or self.event == gui.Exit:#somehow, this line works only if placed above the check for event and values being None
             self.closeWindow()  
         else:
-            if self.event == const.Layout.HOW_TO_USE_BUTTON:
+            if self.event == const.Layout.EXPLANATION_BUTTON:
                 SimplePopup(self.__getHelpInformation(), "How to use the GUI")               
             if self.event == const.Layout.PREV_BUTTON or self.event == const.Layout.NEXT_BUTTON:
+                if self.firstTimeClickingNextPrev:
+                    self.__clearBothColumns()
+                    #duplicateContacts, self.duplicateIndexAtGUI = self.backend.getInfoOfCurrentDuplicate()
+                    #self.__showContactstoUserOnGUI(duplicateContacts)                    
                 try:
-                    self.__saveAnyContactsChangesToMemory()
+                    if not self.firstTimeClickingNextPrev:
+                        self.__saveAnyContactsChangesToMemory()
                 except ValueError:
+                    self.firstTimeClickingNextPrev = False #to prevent any bugs from not having set this value
                     return #avoid advancing forward or backward if the data is corrupted. Allowing the User a chance to fix the data
                 if self.event == const.Layout.NEXT_BUTTON: 
                     self.backend.moveDuplicateIndex(const.GlobalConstants.FORWARD)
@@ -77,6 +82,7 @@ class ContactsChoiceGUI:
                     self.backend.moveDuplicateIndex(const.GlobalConstants.BACKWARD)                 
                 duplicateContacts, self.duplicateIndexAtGUI = self.backend.getInfoOfCurrentDuplicate()
                 self.__showContactstoUserOnGUI(duplicateContacts) 
+                self.firstTimeClickingNextPrev = False #this needed to be placed here to allow for the "if not self.firstTimeClickingNextPrev:" check above
         return self.event, self.values #for the caller to know when the save button is pressed (to save program state)               
  
     def __saveAnyContactsChangesToMemory(self):
@@ -87,6 +93,10 @@ class ContactsChoiceGUI:
         updatedContact = self.__putContactStringsIntoList(uniqueContact, duplicateContacts)
         log.debug(f"updated contact: {updatedContact}")
         self.backend.updateInfoOfCurrentDuplicate(updatedContact)
+
+    def __clearBothColumns(self):
+        self.window[const.Layout.CONTACTS_DISPLAY_TEXTFIELD].update("")
+        self.window[const.Layout.DUPLICATES_DISPLAY_TEXTFIELD].update("")                
 
     def __showContactstoUserOnGUI(self, contacts):
         """ Show the contacts in the left and right multiline text boxes """
@@ -124,6 +134,7 @@ class ContactsChoiceGUI:
         contact = None
         numBegins = 0; numEnds = 0
         for line in contacts:
+            log.debug(f"The line is: {line}")
             if line:#if the string is not empty
                 if line.startswith(const.Properties.BEGIN):
                     contact = [] #create a new contact

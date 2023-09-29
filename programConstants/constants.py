@@ -21,7 +21,7 @@ class Layout:#these constants are kept here in case any functions outside menus.
     NEXT_BUTTON = 'Next contact >'
     PREV_BUTTON = '< Previous contact'
     SAVE_BUTTON = 'Save'
-    HOW_TO_USE_BUTTON = 'How to use'
+    EXPLANATION_BUTTON = 'Explanation'
     CONTACTS_DISPLAY_TEXTFIELD = '- contactsDisplay -'
     DUPLICATES_DISPLAY_TEXTFIELD = '- duplicatesDisplay -'
     CONTACTS_COMPLETED_TEXT = '- contactsCompleted -'
