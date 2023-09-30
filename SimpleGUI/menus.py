@@ -50,10 +50,10 @@ class ContactsChoiceGUI:
             self.layout.append([gui.Text(s, text_color = const.Layout.COLOR_GREY, justification = const.Layout.LEFT_JUSTIFY)])    
         self.layout.append([gui.Text('_' * self.horizontalSepLen, justification = const.Layout.RIGHT_JUSTIFY, text_color = const.Layout.COLOR_GREY)])
         contactColumnTitle = gui.Text("Contact(s) that will be saved")
-        contactsColumnDefaultText = textwrap.fill(f"Select contacts by dragging the mouse pointer and cut / copy / paste using the usual Ctrl+x / Ctrl+c / Ctrl+v. Contacts in this column will be saved to disk when you click the {const.Layout.SAVE_BUTTON} button.", self.multilineWrapLength)
-        contactsColumnDefaultText += "\n\n" + textwrap.fill(f"Start examining the contacts by clicking the {const.Layout.NEXT_BUTTON} button below", self.multilineWrapLength)
+        contactsColumnDefaultText = textwrap.fill(f"Select contacts by dragging the mouse pointer and cut / copy / paste using the usual Ctrl+x / Ctrl+c / Ctrl+v. Contacts in this column will be saved to disk when you click the '{const.Layout.SAVE_BUTTON}' button.", self.multilineWrapLength)
+        contactsColumnDefaultText += "\n\n" + textwrap.fill(f"Start examining the contacts by clicking the '{const.Layout.NEXT_BUTTON}' button below", self.multilineWrapLength)
         contactsDisplay = gui.Multiline(contactsColumnDefaultText, size = (self.multilineTextboxWidth, self.multilineTextboxHeight), key = const.Layout.CONTACTS_DISPLAY_TEXTFIELD, horizontal_scroll = True, do_not_clear = True)        
-        duplicatesColumnTitle = gui.Text("Duplicates")
+        duplicatesColumnTitle = gui.Text("Duplicates (will be discarded)")
         duplicatesColumnDefaultText = textwrap.fill(f"This column will display the assumed duplicates of the contact(s) shown in the other column. Any text in this 'Duplicates' column will not be saved to disk.", self.multilineWrapLength)
         duplicatesColumnDefaultText += "\n\n" + textwrap.fill(f"The program has {totalContacts} contacts in memory, of which {self.numDuplicates} appear to have duplicates.", self.multilineWrapLength)
         duplicatesDisplay = gui.Multiline(duplicatesColumnDefaultText, size = (self.multilineTextboxWidth, self.multilineTextboxHeight), key = const.Layout.DUPLICATES_DISPLAY_TEXTFIELD, horizontal_scroll = True, do_not_clear = True)
@@ -249,7 +249,7 @@ class Explanation:
                                "So now there are unique contacts and groups of duplicate contacts. The GUI then shows you each group of contacts, and "
                                f"you can iterate each group using the '{const.Layout.NEXT_BUTTON}' and '{const.Layout.PREV_BUTTON}' buttons. "
                                "From each group, the first contact is shown on the right, and the duplicates are shown on the left. At any point of time, "
-                               f"if you click the {const.Layout.SAVE_BUTTON} button, all unique contacts (won't be shown on the GUI) will get saved to a file named '{const.GlobalConstants.DEFAULT_SAVE_FILENAME}{const.GlobalConstants.VCF_EXTENSION}' "
+                               f"if you click the '{const.Layout.SAVE_BUTTON}' button, all unique contacts (won't be shown on the GUI) will get saved to a file named '{const.GlobalConstants.DEFAULT_SAVE_FILENAME}{const.GlobalConstants.VCF_EXTENSION}' "
                                f"and the first contact in each group of duplicates (shown on the right side), will also be saved to the file. This means that if you don't inspect all duplicates before saving"
                                ", the contacts which are not actually duplicates, and were displayed on the left side, won't be saved. Each time you click "
                                f"'{const.Layout.SAVE_BUTTON}', the program will also save progress into a temporary binary file named '{const.GlobalConstants.PROGRAM_STATE_SAVE_FILENAME}', "
@@ -257,7 +257,7 @@ class Explanation:
                                "\nThe program remembers the path you last specified for searching for VCF files, to avoid having to re-browse for it."                               
                             )
         howToUse = self.wrap(f"Use the '{const.Layout.NEXT_BUTTON}' and '{const.Layout.PREV_BUTTON}' buttons to verify if the duplicates the program detected "
-                             "are indeed duplicates. You can copy and paste data between the left and right textboxes. Just make sure you don't mess up the "
+                             "are indeed duplicates. You can copy and paste data between the left and right textboxes. Just make sure you follow the "
                              f"standard VCF format when modifying the data. Click the '{const.Layout.SAVE_BUTTON}' button when done, and you'll find the merged "
                              f"contacts in the '{const.GlobalConstants.DEFAULT_SAVE_FILENAME}{const.GlobalConstants.VCF_EXTENSION}' file which will be in the same "
                              "folder that contains the VCF files."                             

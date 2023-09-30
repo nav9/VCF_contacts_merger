@@ -71,22 +71,26 @@ class VCF:
         assert(self.getNumberOfContacts() == (self.totalContactsProcessed - self.contactsDiscarded)) #ensure that there are no contacts missed        
         return self.getNumberOfContacts(), self.getNumberOfDuplicates()
 
+    #TODO: This searching algorithm needs to be improved to consider all phone numbers for finding duplicates, in a better way. The current method of skipping contacts already processed, is making it incapable of finding certain duplicates
     def searchForDuplicateContactsBasedOnPhoneNumber(self): 
+        intervalToOutputLog = 10
         self.indicesOfAllDuplicates.clear()       
-        for i in range(self.getNumberOfContacts()-1):
+        numberOfContacts = self.getNumberOfContacts()
+        for i in range(numberOfContacts - 1):
+            if i % intervalToOutputLog == 0: log.info(f"Contact {i} of {numberOfContacts} being searched for duplicates")
             duplicate = []
             iPhoneNumbers = self.__getLast8digitsOfPhoneNumber(i)
-            for j in range(i+1, self.getNumberOfContacts()):
+            for j in range(i+1, numberOfContacts):#iterate all remaining contacts
                 if j in self.indicesOfAllDuplicates: continue #skip any duplicate index that was already found                    
                 else:
                     if iPhoneNumbers.intersection(self.__getLast8digitsOfPhoneNumber(j)):#common partial match of phone numbers were found
-                        self.indicesOfAllDuplicates.add(i)
-                        self.indicesOfAllDuplicates.add(j)
+                        self.indicesOfAllDuplicates.add(i)#add i if it was never added. It goes into a set, so it's ok if it happens repeatedly
+                        self.indicesOfAllDuplicates.add(j)#add the newly detected j too
                         duplicate.append(j)
             if duplicate:#at least one duplicate found
                 duplicate.insert(const.GlobalConstants.FIRST_POSITION_IN_LIST, i)#add i to the beginning of the list
                 self.duplicates.append(duplicate)  
-        self.indicesOfUniqueContacts = self.indicesOfAllDuplicates.symmetric_difference(range(self.getNumberOfContacts())) #finds indices that are not common between the two sets    
+        self.indicesOfUniqueContacts = self.indicesOfAllDuplicates.symmetric_difference(range(numberOfContacts)) #finds indices that are not common between the two sets    
         self.__replaceDuplicateIndicesWithActualValues()
         return self.getNumberOfDuplicates()
 
@@ -95,7 +99,9 @@ class VCF:
         #The values will originally be like this: [[1,7,9,10],   [2,90,340], ...] 
         #They need to be changed to be like this: [ [[['BEGIN:VCARD', 'FN:UniqueContact1', ...]], [[['BEGIN:VCARD', 'FN:DuplicateContact1', ...], ['BEGIN:VCARD', 'FN:DuplicateContact2', ...]]], ... ]
         #So essentially, they become like: [[ [[1]], [[7], [9], [10]] ],    [ [[2]], [[90], [340]] ],    ... , ], but the numbers in this line are only meant to show how the original index values are represented here. In this line, in place of the numbers, the actual strings from the contacts will be present
+        intervalToOutputLog = 10        
         for i in range(len(self.duplicates)):#duplicate will be a list of indices of self.allContacts. Eg: [2,6,34]            
+            if i % intervalToOutputLog == 0: log.info(f"Contact {i} of {len(self.duplicates)} being readied for GUI")
             #---take the first element from the group of duplicates
             uniqueContact = self.duplicates[i][const.GlobalConstants.FIRST_POSITION_IN_LIST] #get the index value
             uniqueContact = self.allContacts[uniqueContact] #get the contact from the index value. This will be a list like ['BEGIN:VCARD', 'FN:UniqueContact1', ...] 
@@ -138,6 +144,7 @@ class VCF:
         return phoneNumbers
 
     def __readData(self, filenameWithPath):
+        log.info(f"Loading contacts from {filenameWithPath}")
         lines = self.fileOps.readFromFile(filenameWithPath)
         numLines = len(lines)
         i = const.GlobalConstants.FIRST_POSITION_IN_LIST
