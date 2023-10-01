@@ -70,11 +70,11 @@ class ContactsChoiceGUI:
         self.layout.append([gui.Button(const.Layout.PREV_BUTTON, key = const.Layout.PREV_BUTTON), 
                             gui.Text("", key = const.Layout.CONTACTS_COMPLETED_TEXT),
                             gui.Button(const.Layout.NEXT_BUTTON, key = const.Layout.NEXT_BUTTON)])
-        self.layout.append([gui.Button(const.Layout.SAVE_BUTTON, key = const.Layout.SAVE_BUTTON)])
+        self.layout.append([gui.Checkbox("Arrow key navigation", default = True, enable_events = True, key = const.Layout.ARROW_KEY_CHECKBOX), 
+                            gui.Button(const.Layout.SAVE_BUTTON, key = const.Layout.SAVE_BUTTON)])
         self.window = gui.Window('VCF duplicate find and merge', self.layout, finalize=True, grab_anywhere = False, element_justification = const.Layout.RIGHT_JUSTIFY)                 
         #---bind the left and right arrow keys to the buttons
-        self.window.bind('<Right>', const.Layout.NEXT_BUTTON)
-        self.window.bind('<Left>', const.Layout.PREV_BUTTON)        
+        self.__allowLeftRightArrowKeysForNavigation(True)
 
     def runEventLoop(self):#this function should get called repeatedly from an external while loop
         self.event, self.values = self.window.read(timeout = const.Layout.WINDOW_WAIT_TIMEOUT_MILLISECOND) 
@@ -84,6 +84,9 @@ class ContactsChoiceGUI:
             if self.event == const.Layout.EXPLANATION_BUTTON:
                 explainUI = Explanation()        
                 explainUI.display()
+            if self.event == const.Layout.ARROW_KEY_CHECKBOX:
+                print(f"IN CHECKBOX {self.values[self.event]}")
+                self.__allowLeftRightArrowKeysForNavigation(self.values[self.event])
             if self.event == const.Layout.PREV_BUTTON or self.event == const.Layout.NEXT_BUTTON:
                 if self.firstTimeClickingNextPrev:
                     self.__clearBothColumns()
@@ -111,6 +114,14 @@ class ContactsChoiceGUI:
                 else: SimplePopup(f"Saved {numContacts} contacts to: {self.backend.getFolderUserChose()}{const.GlobalConstants.DEFAULT_SAVE_FILENAME}{const.GlobalConstants.VCF_EXTENSION}. Any old file with the same name is overwritten.\nContacts won't be in alphabetical order.\nProgram state should have been saved to {const.GlobalConstants.PROGRAM_STATE_SAVE_FILENAME}", "Success")
         return self.event, self.values #for the caller to know when the save button is pressed (to save program state)               
  
+    def __allowLeftRightArrowKeysForNavigation(self, enabled):
+        if enabled:
+            self.window.bind(const.Layout.RIGHT_ARROW_KEY_BINDSTRING, const.Layout.NEXT_BUTTON)
+            self.window.bind(const.Layout.LEFT_ARROW_KEY_BINDSTRING, const.Layout.PREV_BUTTON)        
+        else:
+            self.window.unbind(const.Layout.RIGHT_ARROW_KEY_BINDSTRING)
+            self.window.unbind(const.Layout.LEFT_ARROW_KEY_BINDSTRING)          
+
     def __saveAnyContactsChangesToMemory(self):
         """ If the user had made any changes to the unique contact or even the duplicate contact, save it to memory """
         uniqueContact = self.values[const.Layout.CONTACTS_DISPLAY_TEXTFIELD]

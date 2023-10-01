@@ -22,6 +22,7 @@ class Layout:#these constants are kept here in case any functions outside menus.
     NEXT_BUTTON = 'Next contact >'
     PREV_BUTTON = '< Previous contact'
     SAVE_BUTTON = 'Save'
+    ARROW_KEY_CHECKBOX = '- Arrow key navigation checkbox -'
     EXPLANATION_BUTTON = 'Explanation'
     YES_BUTTON = 'Yes'
     NO_BUTTON = 'No'
@@ -38,6 +39,8 @@ class Layout:#these constants are kept here in case any functions outside menus.
     LEFT_JUSTIFY = 'left'
     RIGHT_JUSTIFY = 'right'
     CENTER_JUSTIFY = 'center'  
+    RIGHT_ARROW_KEY_BINDSTRING = '<Right>'
+    LEFT_ARROW_KEY_BINDSTRING = '<Left>'
 
 class Properties:#property names present in a VCard https://en.wikipedia.org/wiki/VCard#toc-Properties
     BEGIN = 'BEGIN'
