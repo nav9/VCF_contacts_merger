@@ -31,6 +31,7 @@ class Layout:#these constants are kept here in case any functions outside menus.
     EVENT_CANCEL = 'Cancel'
     CONTACTS_DISPLAY_TEXTFIELD = '- contactsDisplay -'
     DUPLICATES_DISPLAY_TEXTFIELD = '- duplicatesDisplay -'
+    TEMP_TEXT_TEXTFIELD = '- tempText -'
     CONTACTS_COMPLETED_TEXT = '- contactsCompleted -'
     COLOR_GREY = 'grey'
     COLOR_BLACK = 'black'

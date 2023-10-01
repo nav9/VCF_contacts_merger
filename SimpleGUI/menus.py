@@ -25,10 +25,13 @@ class ContactsChoiceGUI:
     def __init__(self):
         self.event = None
         self.values = None
-        self.horizontalSepLen = 90    
+        self.horizontalSepLen = 120    
         self.multilineTextboxWidth = 40
         self.multilineTextboxHeight = 30
         self.multilineWrapLength = 47
+        self.tempTextboxWidth = 25
+        self.tempTextboxHeight = 15       
+        self.tempWrapLength = 30
         self.layout = []
         self.backend = None
         self.window = None
@@ -57,9 +60,13 @@ class ContactsChoiceGUI:
         duplicatesColumnDefaultText = textwrap.fill(f"This column will display the assumed duplicates of the contact(s) shown in the other column. Any text in this 'Duplicates' column will not be saved to disk.", self.multilineWrapLength)
         duplicatesColumnDefaultText += "\n\n" + textwrap.fill(f"The program has {totalContacts} contacts in memory, of which {self.numDuplicates} appear to have duplicates.", self.multilineWrapLength)
         duplicatesDisplay = gui.Multiline(duplicatesColumnDefaultText, size = (self.multilineTextboxWidth, self.multilineTextboxHeight), key = const.Layout.DUPLICATES_DISPLAY_TEXTFIELD, horizontal_scroll = True, do_not_clear = True)
+        tempColumnTitle = gui.Text("Temp (won't be saved)")
+        tempColumnDefaultText = textwrap.fill("You can use this column to temporarily store any text.", self.tempWrapLength)
+        tempDisplay = gui.Multiline(tempColumnDefaultText, size = (self.tempTextboxWidth, self.tempTextboxHeight), key = const.Layout.TEMP_TEXT_TEXTFIELD, horizontal_scroll = True, do_not_clear = True)
+        tempColumn = [[tempColumnTitle], [tempDisplay]]
         leftColumn = [[duplicatesColumnTitle], [duplicatesDisplay]]
         rightColumn = [[contactColumnTitle], [contactsDisplay]]
-        self.layout.append([gui.Column(leftColumn), gui.Column(rightColumn)])
+        self.layout.append(gui.vtop([gui.Column(tempColumn), gui.Column(leftColumn), gui.Column(rightColumn)]))
         self.layout.append([gui.Button(const.Layout.PREV_BUTTON, key = const.Layout.PREV_BUTTON), 
                             gui.Text("", key = const.Layout.CONTACTS_COMPLETED_TEXT),
                             gui.Button(const.Layout.NEXT_BUTTON, key = const.Layout.NEXT_BUTTON)])
