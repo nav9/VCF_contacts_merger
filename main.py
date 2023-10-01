@@ -24,12 +24,11 @@ def main():#Reason for a main function https://stackoverflow.com/questions/60276
     fileOps = fileFolderOperations.FileOperations()
 
     #---ask User where the VCF files are
-    # topText = f'Which folder has files with names ending with {const.GlobalConstants.VCF_EXTENSION}? '
-    # bottomText = f'Choose the folder containing all your {const.GlobalConstants.VCF_EXTENSION} files. The program will merge contacts to a new file and ask you about ambiguous contacts. All subfolders will also be searched for {const.GlobalConstants.VCF_EXTENSION} files.'       
-    # whichFolder = menus.FolderChoiceMenu(fileOps)
-    # whichFolder.showUserTheMenu("Folder Selector", topText, bottomText)
-    # folderChosen = whichFolder.getUserChoice()
-    folderChosen = '/home/nav/Desktop/mamachen/'
+    topText = f'Which folder has files with names ending with {const.GlobalConstants.VCF_EXTENSION}? '
+    bottomText = f'Choose the folder containing all your {const.GlobalConstants.VCF_EXTENSION} files. The program will merge contacts to a new file and ask you about ambiguous contacts. All subfolders will also be searched for {const.GlobalConstants.VCF_EXTENSION} files.'       
+    whichFolder = menus.FolderChoiceMenu(fileOps)
+    whichFolder.showUserTheMenu("Folder Selector", topText, bottomText)
+    folderChosen = whichFolder.getUserChoice()
     programStateFile = os.path.join(folderChosen, const.GlobalConstants.PROGRAM_STATE_SAVE_FILENAME)
     
     #---load all info from VCF files
