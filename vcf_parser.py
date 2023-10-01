@@ -1,4 +1,5 @@
 import os
+import datetime
 from loguru import logger as log
 from collections import deque
 from programConstants import constants as const
@@ -49,9 +50,9 @@ class VCF:
                 numContacts += 1
                 contactsToSave = contactsToSave + contact #merging each line of the contact into the contactsToSave list so that it gets written line by line
         #---write
-        saveFileName = os.path.join(self.folderChosen, const.GlobalConstants.DEFAULT_SAVE_FILENAME + const.GlobalConstants.VCF_EXTENSION)
+        saveFileName = os.path.join(self.folderChosen, const.GlobalConstants.DEFAULT_SAVE_FILENAME + datetime.date.today().strftime("%d%B%Y") + const.GlobalConstants.VCF_EXTENSION)
         errorSaving = self.fileOps.writeLinesToFile(saveFileName, contactsToSave)
-        return errorSaving, numContacts #value will be None if successful save. Else, it'll contain the error message
+        return errorSaving, numContacts, saveFileName #value will be None if successful save. Else, it'll contain the error message
     
     def moveDuplicateIndex(self, direction):#this will be called from the GUI
         if direction == const.GlobalConstants.FORWARD:

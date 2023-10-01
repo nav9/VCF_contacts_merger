@@ -95,7 +95,7 @@ class ContactsChoiceGUI:
                     duplicateContacts, self.duplicateIndexAtGUI = self.backend.getInfoOfCurrentDuplicate()
                     self.__showContactstoUserOnGUI(duplicateContacts) 
             if self.event == const.Layout.SAVE_BUTTON:
-                errorSaving, numContacts = self.backend.saveContactsToDisk()
+                errorSaving, numContacts, filenameWithPath = self.backend.saveContactsToDisk()
                 if errorSaving: 
                     if len(errorSaving) > const.GlobalConstants.MAX_LENGTH_OF_ERROR:#truncate a long error message, but make sure it's shown fully in the log
                         log.error(errorSaving)

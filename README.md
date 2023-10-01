@@ -9,8 +9,9 @@ Contacts are analyzed for similarity based on the last few characters in the row
 Do the following pip install before running the program:
 `pip install loguru textwrap`
   
-# Run
-`python main.py`
+# Run  
+As a general precaution, keep backups of your contact files even after merging them.  
+Run the program using: `python main.py`
   
 # Other resources
 * Wikipedia [info on VCF files](https://en.wikipedia.org/wiki/VCard).
