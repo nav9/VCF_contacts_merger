@@ -101,11 +101,12 @@ class VCF:
         #duplicateBuckets is a list() like this: [  [set(phone numbers), set(duplicate indices of the phone numbers)],  [set(), set()],  ...  ]
         for i in range(self.getNumberOfContacts()):
             phoneNumbersAt_i = self.__getLast8digitsOfPhoneNumber(i) #returns a set of numbers
-            #TODO: if nothing present
             noPhoneNumberMatched = True
             for bucket in duplicateBuckets:#go through all existing buckets created
-                if bucket[const.GlobalConstants.FIRST_POSITION_IN_LIST].intersection(phoneNumbersAt_i):#are any of the phone numbers present in the bucket's phone numbers?
+                phoneNumbers = bucket[const.GlobalConstants.FIRST_POSITION_IN_LIST]
+                if phoneNumbers.intersection(phoneNumbersAt_i):#are any of the phone numbers present in the bucket's phone numbers?
                     noPhoneNumberMatched = False
+                    bucket[const.GlobalConstants.FIRST_POSITION_IN_LIST] = phoneNumbers.union(phoneNumbersAt_i) #add these phone numbers as they are part of the duplicate
                     bucket[const.GlobalConstants.SECOND_POSITION_IN_LIST].add(i) #add this index to the bucket's list of indices
             if noPhoneNumberMatched:#create a new entry
                 duplicateBuckets.append([phoneNumbersAt_i, set({i})])
