@@ -27,7 +27,7 @@ class ContactsChoiceGUI:
         self.values = None
         self.horizontalSepLen = 90    
         self.multilineTextboxWidth = 40
-        self.multilineTextboxHeight = 20
+        self.multilineTextboxHeight = 30
         self.multilineWrapLength = 47
         self.layout = []
         self.backend = None
@@ -51,7 +51,7 @@ class ContactsChoiceGUI:
         self.layout.append([gui.Text('_' * self.horizontalSepLen, justification = const.Layout.RIGHT_JUSTIFY, text_color = const.Layout.COLOR_GREY)])
         contactColumnTitle = gui.Text("Contact(s) that will be saved")
         contactsColumnDefaultText = textwrap.fill(f"Select contacts by dragging the mouse pointer and cut / copy / paste using the usual Ctrl+x / Ctrl+c / Ctrl+v. Contacts in this column will be saved to disk when you click the '{const.Layout.SAVE_BUTTON}' button.", self.multilineWrapLength)
-        contactsColumnDefaultText += "\n\n" + textwrap.fill(f"Start examining the contacts by clicking the '{const.Layout.NEXT_BUTTON}' button below", self.multilineWrapLength)
+        contactsColumnDefaultText += "\n\n" + textwrap.fill(f"Start examining the duplicate contacts by clicking the '{const.Layout.NEXT_BUTTON}' button below or use the left and right arrow keys.", self.multilineWrapLength)
         contactsDisplay = gui.Multiline(contactsColumnDefaultText, size = (self.multilineTextboxWidth, self.multilineTextboxHeight), key = const.Layout.CONTACTS_DISPLAY_TEXTFIELD, horizontal_scroll = True, do_not_clear = True)        
         duplicatesColumnTitle = gui.Text("Duplicates (will be discarded)")
         duplicatesColumnDefaultText = textwrap.fill(f"This column will display the assumed duplicates of the contact(s) shown in the other column. Any text in this 'Duplicates' column will not be saved to disk.", self.multilineWrapLength)
@@ -64,9 +64,10 @@ class ContactsChoiceGUI:
                             gui.Text("", key = const.Layout.CONTACTS_COMPLETED_TEXT),
                             gui.Button(const.Layout.NEXT_BUTTON, key = const.Layout.NEXT_BUTTON)])
         self.layout.append([gui.Button(const.Layout.SAVE_BUTTON, key = const.Layout.SAVE_BUTTON)])
-
-        self.window = gui.Window('VCF duplicate find and merge', self.layout, grab_anywhere = False, element_justification = const.Layout.RIGHT_JUSTIFY)                 
-        #self.window.read() #need to finalize the window like this before being able to update any element        
+        self.window = gui.Window('VCF duplicate find and merge', self.layout, finalize=True, grab_anywhere = False, element_justification = const.Layout.RIGHT_JUSTIFY)                 
+        #---bind the left and right arrow keys to the buttons
+        self.window.bind('<Right>', const.Layout.NEXT_BUTTON)
+        self.window.bind('<Left>', const.Layout.PREV_BUTTON)        
 
     def runEventLoop(self):#this function should get called repeatedly from an external while loop
         self.event, self.values = self.window.read(timeout = const.Layout.WINDOW_WAIT_TIMEOUT_MILLISECOND) 

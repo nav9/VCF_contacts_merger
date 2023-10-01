@@ -15,6 +15,7 @@ class VCF:
         self.indicesOfAllDuplicates = set() #indices of contacts with similar phone numbers that were already found
         self.indicesOfUniqueContacts = set() #indices of contacts which have no duplicates
         self.filesWithFullPath = None
+        self.phoneNumberComparison = dict() #{index of contact: set of last 8 digits of phone numbers of the contact}
 
     def whichFilesWereConsideredVCF(self):#this will be called from the GUI too
         return self.filesWithFullPath
@@ -71,35 +72,50 @@ class VCF:
         assert(self.getNumberOfContacts() == (self.totalContactsProcessed - self.contactsDiscarded)) #ensure that there are no contacts missed        
         return self.getNumberOfContacts(), self.getNumberOfDuplicates()
 
-    #TODO: This searching algorithm needs to be improved to consider all phone numbers for finding duplicates, in a better way. The current method of skipping contacts already processed, is making it incapable of finding certain duplicates
     def searchForDuplicateContactsBasedOnPhoneNumber(self): 
-        intervalToOutputLog = 10
-        self.indicesOfAllDuplicates.clear()       
-        numberOfContacts = self.getNumberOfContacts()
-        for i in range(numberOfContacts - 1):
-            if i % intervalToOutputLog == 0: log.info(f"Contact {i} of {numberOfContacts} being searched for duplicates")
-            duplicate = []
-            iPhoneNumbers = self.__getLast8digitsOfPhoneNumber(i)
-            for j in range(i+1, numberOfContacts):#iterate all remaining contacts
-                if j in self.indicesOfAllDuplicates: continue #skip any duplicate index that was already found                    
-                else:
-                    if iPhoneNumbers.intersection(self.__getLast8digitsOfPhoneNumber(j)):#common partial match of phone numbers were found
-                        self.indicesOfAllDuplicates.add(i)#add i if it was never added. It goes into a set, so it's ok if it happens repeatedly
-                        self.indicesOfAllDuplicates.add(j)#add the newly detected j too
-                        duplicate.append(j)
-            if duplicate:#at least one duplicate found
-                duplicate.insert(const.GlobalConstants.FIRST_POSITION_IN_LIST, i)#add i to the beginning of the list
-                self.duplicates.append(duplicate)  
-        self.indicesOfUniqueContacts = self.indicesOfAllDuplicates.symmetric_difference(range(numberOfContacts)) #finds indices that are not common between the two sets    
+        duplicateBuckets = list() #[  [set(phone numbers), set(duplicate indices of the phone numbers)],  [set(), set()],  ...  ]
+        log.info(f"Searching {self.getNumberOfContacts()} for duplicates")
+        print("First iteration")
+        self.__addPhoneNumberDuplicatesToBucket(duplicateBuckets)
+        print("Second iteration")
+        self.__addPhoneNumberDuplicatesToBucket(duplicateBuckets)#need to run this a second time to find any duplicates missed
+        #---now the buckets will have duplicate indices and non duplicate ones. Search
+        #TODO: if a contact does not have a phone number, consider checking such contacts for duplicates based on name or email id
+        for bucket in duplicateBuckets:
+            #phoneNumbers = bucket[const.GlobalConstants.FIRST_POSITION_IN_LIST] #there's a chance that a phone number may not be present, and that's normal
+            indices = bucket[const.GlobalConstants.SECOND_POSITION_IN_LIST] #there has to be at least one index. Because a bucket is created for any valid index or indices
+            if len(indices) == 1:#index of a unique contact
+                self.indicesOfUniqueContacts = self.indicesOfUniqueContacts.union(indices)
+            if len(indices) > 1:#indices of contacts with duplicates
+                self.indicesOfAllDuplicates = self.indicesOfAllDuplicates.union(indices)
+                self.duplicates.append(list(indices))
+        #---check for errors
+        displayMessage = f"Number of duplicates: {len(self.indicesOfAllDuplicates)}. Number of unique contacts: {len(self.indicesOfUniqueContacts)}. Total contacts: {len(self.allContacts)}. "
+        if len(self.indicesOfAllDuplicates) + len(self.indicesOfUniqueContacts) != len(self.allContacts): raise ValueError(displayMessage + "The sum of duplicates and unique contacts should be equal to total contacts. If not, there's some bug in the code.")
+        else: log.info(displayMessage)   
+        #---prepare the duplicates for displaying in the GUI     
         self.__replaceDuplicateIndicesWithActualValues()
-        return self.getNumberOfDuplicates()
+        return self.getNumberOfDuplicates() 
+
+    def __addPhoneNumberDuplicatesToBucket(self, duplicateBuckets):#passing duplicateBuckets by reference
+        #duplicateBuckets is a list() like this: [  [set(phone numbers), set(duplicate indices of the phone numbers)],  [set(), set()],  ...  ]
+        for i in range(self.getNumberOfContacts()):
+            phoneNumbersAt_i = self.__getLast8digitsOfPhoneNumber(i) #returns a set of numbers
+            #TODO: if nothing present
+            noPhoneNumberMatched = True
+            for bucket in duplicateBuckets:#go through all existing buckets created
+                if bucket[const.GlobalConstants.FIRST_POSITION_IN_LIST].intersection(phoneNumbersAt_i):#are any of the phone numbers present in the bucket's phone numbers?
+                    noPhoneNumberMatched = False
+                    bucket[const.GlobalConstants.SECOND_POSITION_IN_LIST].add(i) #add this index to the bucket's list of indices
+            if noPhoneNumberMatched:#create a new entry
+                duplicateBuckets.append([phoneNumbersAt_i, set({i})])
 
     def __replaceDuplicateIndicesWithActualValues(self):   
         """ Replacing indices with values because the actual values are what will be shown and edited in the GUI """   
         #The values will originally be like this: [[1,7,9,10],   [2,90,340], ...] 
         #They need to be changed to be like this: [ [[['BEGIN:VCARD', 'FN:UniqueContact1', ...]], [[['BEGIN:VCARD', 'FN:DuplicateContact1', ...], ['BEGIN:VCARD', 'FN:DuplicateContact2', ...]]], ... ]
         #So essentially, they become like: [[ [[1]], [[7], [9], [10]] ],    [ [[2]], [[90], [340]] ],    ... , ], but the numbers in this line are only meant to show how the original index values are represented here. In this line, in place of the numbers, the actual strings from the contacts will be present
-        intervalToOutputLog = 10        
+        intervalToOutputLog = 100        
         for i in range(len(self.duplicates)):#duplicate will be a list of indices of self.allContacts. Eg: [2,6,34]            
             if i % intervalToOutputLog == 0: log.info(f"Contact {i} of {len(self.duplicates)} being readied for GUI")
             #---take the first element from the group of duplicates
@@ -122,6 +138,9 @@ class VCF:
 
     def __getLast8digitsOfPhoneNumber(self, index):
         """ returns a set of the last 8 digits (or lesser digits if shorter than 8) of all phone numbers found in this contact """
+        if index in self.phoneNumberComparison:
+            if self.phoneNumberComparison[index]:#it had already been computed and stored, so just return the set
+                return self.phoneNumberComparison[index]
         phoneNumbers = set()
         contact = self.allContacts[index]
         delimiters = [const.GlobalConstants.COLON_DELIMITER, const.GlobalConstants.SEMICOLON_DELIMITER]
@@ -141,6 +160,7 @@ class VCF:
                     if len(phoneNumber) >= const.GlobalConstants.NUMBER_OF_TEL_END_DIGITS:
                         phoneNumber = phoneNumber[-const.GlobalConstants.NUMBER_OF_TEL_END_DIGITS:]#get the last 8 digits
                     phoneNumbers.add(phoneNumber)
+        self.phoneNumberComparison[index] = phoneNumbers                    
         return phoneNumbers
 
     def __readData(self, filenameWithPath):
