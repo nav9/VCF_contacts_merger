@@ -28,6 +28,7 @@ class Layout:#these constants are kept here in case any functions outside menus.
     NO_BUTTON = 'No'
     OK_BUTTON = 'Ok'
     CANCEL_BUTTON = 'Cancel'
+    PRESELECTED_FOLDER_TEXTFIELD = 'Use Previous Folder'
     EVENT_EXIT = 'Exit'
     EVENT_CANCEL = 'Cancel'
     CONTACTS_DISPLAY_TEXTFIELD = '- contactsDisplay -'

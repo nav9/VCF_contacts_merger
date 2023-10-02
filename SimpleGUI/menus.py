@@ -43,6 +43,7 @@ class ContactsChoiceGUI:
     def addBackendOfVCF(self, backendRef):
         self.backend = backendRef
 
+    #TODO: Add a dropdown for selecting the current index
     def createGUI(self):
         totalContacts = self.backend.getNumberOfContacts()
         self.numDuplicates = self.backend.getNumberOfDuplicates()        
@@ -81,12 +82,14 @@ class ContactsChoiceGUI:
         if self.event == gui.WIN_CLOSED or self.event == gui.Exit:#somehow, this line works only if placed above the check for event and values being None
             self.closeWindow()  
         else:
+            #---EXPLANATION
             if self.event == const.Layout.EXPLANATION_BUTTON:
                 explainUI = Explanation()        
                 explainUI.display()
+            #---ARROW KEY CHECKBOX
             if self.event == const.Layout.ARROW_KEY_CHECKBOX:
-                print(f"IN CHECKBOX {self.values[self.event]}")
                 self.__allowLeftRightArrowKeysForNavigation(self.values[self.event])
+            #---NEXT PREV
             if self.event == const.Layout.PREV_BUTTON or self.event == const.Layout.NEXT_BUTTON:
                 if self.firstTimeClickingNextPrev:
                     self.__clearBothColumns()
@@ -104,6 +107,7 @@ class ContactsChoiceGUI:
                         self.backend.moveDuplicateIndex(const.GlobalConstants.BACKWARD)                 
                     duplicateContacts, self.duplicateIndexAtGUI = self.backend.getInfoOfCurrentDuplicate()
                     self.__showContactstoUserOnGUI(duplicateContacts) 
+            #---SAVE
             if self.event == const.Layout.SAVE_BUTTON:
                 errorSaving, numContacts, filenameWithPath = self.backend.saveContactsToDisk()
                 if errorSaving: 
@@ -111,11 +115,11 @@ class ContactsChoiceGUI:
                         log.error(errorSaving)
                         errorSaving = (errorSaving[:const.GlobalConstants.MAX_LENGTH_OF_ERROR] + '...') 
                     SimplePopup(f"Could not save contacts to disk. The error is: {errorSaving}", "Error")
-                else: SimplePopup(f"Saved {numContacts} contacts to: {self.backend.getFolderUserChose()}{const.GlobalConstants.DEFAULT_SAVE_FILENAME}{const.GlobalConstants.VCF_EXTENSION}. Any old file with the same name is overwritten.\nContacts won't be in alphabetical order.\nProgram state should have been saved to {const.GlobalConstants.PROGRAM_STATE_SAVE_FILENAME}", "Success")
+                else: SimplePopup(f"Saved {numContacts} contacts to: {filenameWithPath}. Any old file with the same name is overwritten.\nContacts won't be in alphabetical order.\nProgram state should have been saved to {const.GlobalConstants.PROGRAM_STATE_SAVE_FILENAME}", "Success")
         return self.event, self.values #for the caller to know when the save button is pressed (to save program state)               
  
     def __allowLeftRightArrowKeysForNavigation(self, enabled):
-        if enabled:
+        if enabled:#allow User to use left and right arrow keys to navigate duplicate contacts
             self.window.bind(const.Layout.RIGHT_ARROW_KEY_BINDSTRING, const.Layout.NEXT_BUTTON)
             self.window.bind(const.Layout.LEFT_ARROW_KEY_BINDSTRING, const.Layout.PREV_BUTTON)        
         else:
@@ -195,25 +199,27 @@ class ContactsChoiceGUI:
         return self.programRunning
 
 
+#TODO: Could add another button to use the recently opened folder and show the foldername
 #TODO: Could simplify using gui.popup_get_file (https://www.tutorialspoint.com/pysimplegui/pysimplegui_popup_windows.htm)
 class FolderChoiceMenu:
     def __init__(self, fileOps):
         self.event = None
         self.values = None
         self.wrapLength = 70
-        self.horizontalSepLen = 35    
         self.fileOps = fileOps  
         self.folderNameStorageFile = const.GlobalConstants.previouslySelectedFolderForDuplicatesCheck
         self.previouslySelectedFolder = None
     
-    def showUserTheMenu(self, title, topText, bottomText):
+    def showUserTheMenu(self, title):
+        self.checkForPreviouslySelectedFolder() #current folder is assigned to it if no previous folder is found
         #---choose mode of running
+        topText = f'Select folder the containing {const.GlobalConstants.VCF_EXTENSION} files.'
+        bottomText = f"Clicking '{const.Layout.OK_BUTTON}' without selecting a folder will auto-select the pre-selected folder. The program will merge contacts to a new file and ask you to confirm ambiguous contacts. All subfolders will also be searched for {const.GlobalConstants.VCF_EXTENSION} files."       
         layout = []
-        layout.append([gui.Text(self.wrap(topText), justification = const.Layout.LEFT_JUSTIFY)])
-        self.checkForPreviouslySelectedFolder()
+        layout.append([gui.Text(self.wrap(topText), justification = const.Layout.LEFT_JUSTIFY)])        
         layout.append([gui.Input(), gui.FolderBrowse(initial_folder = self.previouslySelectedFolder)])
+        layout.append([gui.Text(self.wrap(f"Selected folder: {self.previouslySelectedFolder}"), key = const.Layout.PRESELECTED_FOLDER_TEXTFIELD, justification = const.Layout.LEFT_JUSTIFY)])    
         layout.append([gui.Text(self.wrap(bottomText), text_color = const.Layout.COLOR_GREY, justification = const.Layout.RIGHT_JUSTIFY)])        
-        layout.append([gui.Text('_' * self.horizontalSepLen, justification = const.Layout.RIGHT_JUSTIFY, text_color = const.Layout.COLOR_BLACK)])
         layout.append([gui.Button(const.Layout.CANCEL_BUTTON), gui.Button(const.Layout.OK_BUTTON)])        
         window = gui.Window(title, layout, grab_anywhere = False, element_justification = const.Layout.RIGHT_JUSTIFY)    
         self.event, self.values = window.read()        
@@ -222,20 +228,22 @@ class FolderChoiceMenu:
     def getUserChoice(self):
         retVal = None
         if self.event == gui.WIN_CLOSED or self.event == const.Layout.EVENT_EXIT \
-                                        or self.event == const.Layout.EVENT_CANCEL \
-                                        or self.values[const.GlobalConstants.FIRST_POSITION_IN_LIST] == '':
+                                        or self.event == const.Layout.EVENT_CANCEL:
+                                        #or self.values[const.GlobalConstants.FIRST_POSITION_IN_LIST] == '':
             log.info('Exiting')
             exit()
-        else:
+        if self.event == const.Layout.OK_BUTTON:
             folderChosen = self.values[const.GlobalConstants.FIRST_POSITION_IN_LIST]
+            if not self.fileOps.isThisValidDirectory(folderChosen):
+                log.warning(f"{folderChosen} is not a valid folder. Using {self.previouslySelectedFolder}")
+                folderChosen = ''
+            if folderChosen == '': folderChosen = self.previouslySelectedFolder
             if self.fileOps.isThisValidDirectory(folderChosen):
                 retVal = self.fileOps.folderSlash(folderChosen)
                 self.setThisFolderAsThePreviouslySelectedFolder(retVal)
             else:
-                retVal = const.FileSearchModes.choice_None
-#         if retVal == FileSearchModes.choice_None:
-#             gui.popup('Please select a valid folder next time. Exiting now.')
-#             exit()    
+                log.error(f"{folderChosen} is not valid. Exiting.")
+                exit()
         return retVal 
     
     def checkForPreviouslySelectedFolder(self):
