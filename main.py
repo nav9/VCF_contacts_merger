@@ -14,7 +14,7 @@ from vcf_parser import VCF
 from programConstants import constants as const
 from loguru import logger as log
 
-log.add("logs.log", rotation="1 week")    # Once the file is too old, it's rotated
+#log.add("logs.log", rotation="1 week")    # Once the file is too old, it's rotated
 #logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 log.remove() #removes the old handler which has DEBUG as the default log level
 log.add(sys.stdout, level="INFO") #add a new handler with INFO as the log level. You can also use
@@ -35,7 +35,7 @@ def main():#Reason for a main function https://stackoverflow.com/questions/60276
     #-check if an already saved program state is present, and whether the User would like to load from it    
     if fileOps.isValidFile(programStateFile):
         userChoice = menus.YesNoPopup()
-        if userChoice.getUserResponse("Found a previous program state. Load it?", 'Your response?'):
+        if userChoice.getUserResponse(f"Found a previous program state in {programStateFile}. Load it?", 'Your response?'):
             try:
                 vcf_merger = loadProgramStateFromDisk(programStateFile, fileOps)
                 numDuplicates = vcf_merger.getNumberOfDuplicates()

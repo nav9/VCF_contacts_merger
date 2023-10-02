@@ -213,7 +213,7 @@ class FolderChoiceMenu:
     def showUserTheMenu(self, title):
         self.checkForPreviouslySelectedFolder() #current folder is assigned to it if no previous folder is found
         #---choose mode of running
-        topText = f'Select folder the containing {const.GlobalConstants.VCF_EXTENSION} files.'
+        topText = f'Select the folder containing {const.GlobalConstants.VCF_EXTENSION} files.'
         bottomText = f"Clicking '{const.Layout.OK_BUTTON}' without selecting a folder will auto-select the pre-selected folder. The program will merge contacts to a new file and ask you to confirm ambiguous contacts. All subfolders will also be searched for {const.GlobalConstants.VCF_EXTENSION} files."       
         layout = []
         layout.append([gui.Text(self.wrap(topText), justification = const.Layout.LEFT_JUSTIFY)])        
