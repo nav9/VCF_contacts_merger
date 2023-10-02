@@ -15,6 +15,7 @@ class VCF:
         self.duplicateIndexAtGUI = 0
         self.indicesOfAllDuplicates = set() #indices of contacts with similar phone numbers that were already found
         self.indicesOfUniqueContacts = set() #indices of contacts which have no duplicates
+        self.indicesOfContactsSansPhoneNumbers = set() #there may be contacts that don't have any phone number. No need of iterating these when merging based on phone numbers
         self.filesWithFullPath = None
         self.phoneNumberComparison = dict() #{index of contact: set of last 8 digits of phone numbers of the contact}
 
@@ -36,16 +37,20 @@ class VCF:
     def saveContactsToDisk(self):#this will be called from the GUI
         """ Saves the unique contacts into a VCF file """  
         numContacts = 0    
-        contactsToSave = []
+        contactsToSave = []        
         #---collect unique contacts
         numContacts += len(self.indicesOfUniqueContacts)
-        for uniqueContactIndex in self.indicesOfUniqueContacts:
-            contactsToSave = contactsToSave + self.allContacts[uniqueContactIndex] #merging each line of the contact into the contactsToSave list so that it gets written line by line
+        for i in self.indicesOfUniqueContacts:
+            contactsToSave += self.allContacts[i] #merging each line of the contact into the contactsToSave list so that it gets written line by line
         #---collect the unique contact in all duplicates
         for duplicate in self.duplicates:
             for contact in duplicate[const.GlobalConstants.FIRST_POSITION_IN_LIST]:
                 numContacts += 1
-                contactsToSave = contactsToSave + contact #merging each line of the contact into the contactsToSave list so that it gets written line by line
+                contactsToSave += contact #merging each line of the contact into the contactsToSave list so that it gets written line by line
+        #---collect contacts with no phone number
+        numContacts += len(self.indicesOfContactsSansPhoneNumbers)
+        for i in self.indicesOfContactsSansPhoneNumbers:
+            contactsToSave += self.allContacts[i]
         #---write
         saveFileName = os.path.join(self.folderChosen, const.GlobalConstants.DEFAULT_SAVE_FILENAME + datetime.date.today().strftime("%d%B%Y") + const.GlobalConstants.VCF_EXTENSION)
         errorSaving = self.fileOps.writeLinesToFile(saveFileName, contactsToSave)
@@ -87,9 +92,12 @@ class VCF:
                 self.indicesOfAllDuplicates = self.indicesOfAllDuplicates.union(indices)
                 self.duplicates.append(list(indices))
             if len(indices) == 0: raise ValueError("A bucket does not have any indices. This should never happen. Buckets should be created only if there are some indices related to it.")
+
         #---check for errors
-        displayMessage = f"Number of duplicates: {len(self.indicesOfAllDuplicates)}. Number of unique contacts: {len(self.indicesOfUniqueContacts)}. Total contacts: {len(self.allContacts)}. "
-        if len(self.indicesOfAllDuplicates) + len(self.indicesOfUniqueContacts) != len(self.allContacts): raise ValueError(displayMessage + "The sum of duplicates and unique contacts should be equal to total contacts. If not, there's some bug in the code.")
+        displayMessage = f"Number of duplicates: {len(self.indicesOfAllDuplicates)}.\nNumber of unique contacts: {len(self.indicesOfUniqueContacts)}.\nNumber of contacts with no phone number: {len(self.indicesOfContactsSansPhoneNumbers)}.\nTotal contacts: {len(self.allContacts)}. "
+        
+        if len(self.indicesOfContactsSansPhoneNumbers) + len(self.indicesOfAllDuplicates) + len(self.indicesOfUniqueContacts) != len(self.allContacts): 
+            raise ValueError(displayMessage + f"The sum of duplicates and unique contacts should be equal to total contacts. If not, there's some bug in the code. Values vary by {len(self.allContacts)-(len(self.indicesOfAllDuplicates)+len(self.indicesOfUniqueContacts)+len(self.indicesOfContactsSansPhoneNumbers))}")
         else: log.info(displayMessage)   
         log.info(f"Number of groups of duplicates = {len(self.duplicates)}")
         #---prepare the duplicates for displaying in the GUI     
@@ -99,7 +107,10 @@ class VCF:
     def __addPhoneNumberDuplicatesToBucket(self, duplicateBuckets):#passing duplicateBuckets by reference
         #duplicateBuckets is a list() like this: [  [set(phone numbers), set(duplicate indices of the phone numbers)],  [set(), set()],  ...  ]. Each [set(), set()] is a bucket.
         for i in range(self.getNumberOfContacts()):
-            phoneNumbersAt_i = self.__getLast8digitsOfPhoneNumber(i) #returns a set of numbers
+            phoneNumbersAt_i = self.__getLast8digitsOfPhoneNumber(i) #returns a set of numbers or an empty set, if the contact has no phone number
+            if not phoneNumbersAt_i: #no phone number detected in this contact
+                self.indicesOfContactsSansPhoneNumbers.add(i)
+                continue #no need to create a bucket for contacts that don't have any phone number
             noPhoneNumberMatched = True
             for bucket in duplicateBuckets:#go through all existing buckets created
                 phoneNumbers = bucket[const.GlobalConstants.FIRST_POSITION_IN_LIST]
@@ -111,8 +122,6 @@ class VCF:
                 duplicateBuckets.append([phoneNumbersAt_i, set({i})])
 
     def __mergeBucketsHavingCommonIndices(self, duplicateBuckets):      
-
-        marked = 0  
         for i in range(len(duplicateBuckets)):
             if len(duplicateBuckets[i]) == 0: continue
             bucket = duplicateBuckets[i]            
@@ -120,24 +129,18 @@ class VCF:
             indices = bucket[const.GlobalConstants.SECOND_POSITION_IN_LIST]
             for j in range(len(duplicateBuckets)):
                 if len(duplicateBuckets[j]) == 0 or i == j: continue                
-                bucketSearch = duplicateBuckets[j]
-                
+                bucketSearch = duplicateBuckets[j]                
                 indicesSearched = bucketSearch[const.GlobalConstants.SECOND_POSITION_IN_LIST]
                 if indices.intersection(indicesSearched):#if any of the indices match, merge into the bucket
                     phoneNumbersSearched = bucketSearch[const.GlobalConstants.FIRST_POSITION_IN_LIST]
                     bucket[const.GlobalConstants.FIRST_POSITION_IN_LIST] = phoneNumbers.union(phoneNumbersSearched)
                     bucket[const.GlobalConstants.SECOND_POSITION_IN_LIST] = indices.union(indicesSearched)
                     duplicateBuckets[j] = [] #mark it as empty, since the values are already merged into the other bucket
-                    marked += 1
-        #---remove any buckets that are None
-        detected = 0
+        #---remove any buckets that are marked empty
         mergedBuckets = deque()
         for bucket in duplicateBuckets:
-            if bucket:                 
-                mergedBuckets.append(bucket) #copy all buckets that are not None
-            else: 
-                detected += 1
-        print(f"Marked {marked}, Detected {detected}")
+            if bucket:#if not marked empty              
+                mergedBuckets.append(bucket) #copy the bucket into the new queue
         return mergedBuckets
 
     def __replaceDuplicateIndicesWithActualValues(self):   
