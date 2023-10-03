@@ -128,19 +128,14 @@ class VCF:
                 duplicateBuckets.append([phoneNumbersAt_i, set({i})])
 
     def __mergeBucketsHavingCommonIndices(self, duplicateBuckets):    
-        indicesToVerify = {497, 578, 1018, 261}
-        print(f"INSIDE mergeBuckets function. Need to check indices {indicesToVerify}")
         for i in range(len(duplicateBuckets)):
             if len(duplicateBuckets[i]) == 0: continue
-            phoneNumbers = duplicateBuckets[i][const.GlobalConstants.FIRST_POSITION_IN_LIST]
+            #phoneNumbers = duplicateBuckets[i][const.GlobalConstants.FIRST_POSITION_IN_LIST]
             indices = duplicateBuckets[i][const.GlobalConstants.SECOND_POSITION_IN_LIST]
-            #if indicesToVerify.intersection(indices): print(f'FFFFound match of {indicesToVerify} in searched indices {indices}, {phoneNumbers}, {self.allContacts[578]}')
-            #if phoneNumbers.intersection({'38219380', '60709761', '38219380', '42814305', '38219380'}): print("found match for 578")
             for j in range(len(duplicateBuckets)):
                 if len(duplicateBuckets[j]) == 0 or i == j: continue                                
                 phoneNumbersSearched = duplicateBuckets[j][const.GlobalConstants.FIRST_POSITION_IN_LIST]
                 indicesSearched = duplicateBuckets[j][const.GlobalConstants.SECOND_POSITION_IN_LIST]
-                #if indicesToVerify.intersection(indicesSearched): print(f'Found match of {indicesToVerify} in searched indices {indicesSearched}')
                 if indices.intersection(indicesSearched):#if any of the indices match, merge into the bucket                    
                     phoneNumbersBefore = duplicateBuckets[i][const.GlobalConstants.FIRST_POSITION_IN_LIST]
                     indicesBefore = duplicateBuckets[i][const.GlobalConstants.SECOND_POSITION_IN_LIST]#somehow, without this line, the union operations below would cause some numbers to disappear
