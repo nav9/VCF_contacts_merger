@@ -44,6 +44,7 @@ class ContactsChoiceGUI:
         self.backend = backendRef
 
     #TODO: Add a dropdown for selecting the current index
+    #TODO: If the focus is in any textfield, automatically disable the arrow key binding
     def createGUI(self):
         totalContacts = self.backend.getNumberOfContacts()
         self.numDuplicates = self.backend.getNumberOfDuplicates()        
@@ -68,12 +69,13 @@ class ContactsChoiceGUI:
         leftColumn = [[duplicatesColumnTitle], [duplicatesDisplay]]
         rightColumn = [[contactColumnTitle], [contactsDisplay]]
         self.layout.append(gui.vtop([gui.Column(tempColumn), gui.Column(leftColumn), gui.Column(rightColumn)]))
-        self.layout.append([gui.Button(const.Layout.PREV_BUTTON, key = const.Layout.PREV_BUTTON), 
+        self.layout.append([gui.Checkbox("Arrow key navigation", default = True, enable_events = True, key = const.Layout.ARROW_KEY_CHECKBOX), 
+                            gui.Button(const.Layout.PREV_BUTTON, key = const.Layout.PREV_BUTTON), 
                             gui.Text("", key = const.Layout.CONTACTS_COMPLETED_TEXT),
                             gui.Button(const.Layout.NEXT_BUTTON, key = const.Layout.NEXT_BUTTON)])
-        self.layout.append([gui.Checkbox("Arrow key navigation", default = True, enable_events = True, key = const.Layout.ARROW_KEY_CHECKBOX), 
-                            gui.Button(const.Layout.SAVE_BUTTON, key = const.Layout.SAVE_BUTTON)])
+        self.layout.append([gui.Button(const.Layout.SAVE_BUTTON, key = const.Layout.SAVE_BUTTON)])
         self.window = gui.Window('VCF duplicate find and merge', self.layout, finalize=True, grab_anywhere = False, element_justification = const.Layout.RIGHT_JUSTIFY)                 
+        self.window[const.Layout.SAVE_BUTTON].set_focus()
         #---bind the left and right arrow keys to the buttons
         self.__allowLeftRightArrowKeysForNavigation(True)
 
@@ -220,8 +222,9 @@ class FolderChoiceMenu:
         layout.append([gui.Input(), gui.FolderBrowse(initial_folder = self.previouslySelectedFolder)])
         layout.append([gui.Text(self.wrap(f"Selected folder: {self.previouslySelectedFolder}"), key = const.Layout.PRESELECTED_FOLDER_TEXTFIELD, justification = const.Layout.LEFT_JUSTIFY)])    
         layout.append([gui.Text(self.wrap(bottomText), text_color = const.Layout.COLOR_GREY, justification = const.Layout.RIGHT_JUSTIFY)])        
-        layout.append([gui.Button(const.Layout.CANCEL_BUTTON), gui.Button(const.Layout.OK_BUTTON)])        
-        window = gui.Window(title, layout, grab_anywhere = False, element_justification = const.Layout.RIGHT_JUSTIFY)    
+        layout.append([gui.Button(const.Layout.CANCEL_BUTTON), gui.Button(const.Layout.OK_BUTTON, key = const.Layout.OK_BUTTON)])        
+        window = gui.Window(title, layout, grab_anywhere = False, finalize=True, element_justification = const.Layout.RIGHT_JUSTIFY)    
+        window[const.Layout.OK_BUTTON].set_focus()
         self.event, self.values = window.read()        
         window.close()
     
@@ -289,8 +292,12 @@ class Explanation:
                              f"contacts in the '{const.GlobalConstants.DEFAULT_SAVE_FILENAME}{const.GlobalConstants.VCF_EXTENSION}' file which will be in the same "
                              "folder that contains the VCF files."                             
                             )
+        keyboard = self.wrap(f"If a button is in focus, you can use the spacebar to 'press' the button. For some reason, PySimpleGUI doesn't support Enter by default. "
+                             "Use the left and right arrow keys to navigate contacts. It can be disabled via a checkbox. "
+                            )        
         textToDisplay = [ Explain("How it works", howItWorks), #the creation of named tuples with the first tuple being the heading and the second being the explanation
-                          Explain("How to use", howToUse)
+                          Explain("How to use", howToUse),
+                          Explain("Keyboard shortcuts", keyboard)
                         ]
 
         self.layout = []

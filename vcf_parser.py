@@ -81,7 +81,7 @@ class VCF:
         log.info(f"Searching {self.getNumberOfContacts()} for duplicates")
         self.__addPhoneNumberDuplicatesToBucket(duplicateBuckets)
         duplicateBuckets = self.__mergeBucketsHavingCommonIndices(duplicateBuckets) #the deque returned will be a new deque which has the duplicates removed and the buckets with common values merged
-        #---now the buckets will have duplicate indices and non duplicate ones. Search
+        #---Extract the duplicates from the buckets that may contain unique contacts or duplicate contacts
         #TODO: if a contact does not have a phone number, consider checking such contacts for duplicates based on name or email id
         for bucket in duplicateBuckets:
             #phoneNumbers = bucket[const.GlobalConstants.FIRST_POSITION_IN_LIST] #there's a chance that a phone number may not be present, and that's normal
@@ -94,15 +94,21 @@ class VCF:
             if len(indices) == 0: raise ValueError("A bucket does not have any indices. This should never happen. Buckets should be created only if there are some indices related to it.")
 
         #---check for errors
-        displayMessage = f"Number of duplicates: {len(self.indicesOfAllDuplicates)}.\nNumber of unique contacts: {len(self.indicesOfUniqueContacts)}.\nNumber of contacts with no phone number: {len(self.indicesOfContactsSansPhoneNumbers)}.\nTotal contacts: {len(self.allContacts)}. "
-        
-        if len(self.indicesOfContactsSansPhoneNumbers) + len(self.indicesOfAllDuplicates) + len(self.indicesOfUniqueContacts) != len(self.allContacts): 
-            raise ValueError(displayMessage + f"The sum of duplicates and unique contacts should be equal to total contacts. If not, there's some bug in the code. Values vary by {len(self.allContacts)-(len(self.indicesOfAllDuplicates)+len(self.indicesOfUniqueContacts)+len(self.indicesOfContactsSansPhoneNumbers))}")
-        else: log.info(displayMessage)   
-        log.info(f"Number of groups of duplicates = {len(self.duplicates)}")
+        self.__checkIfAllContactsHaveBeenConsidered_ErrorCheck()
         #---prepare the duplicates for displaying in the GUI     
         self.__replaceDuplicateIndicesWithActualValues()
         return self.getNumberOfDuplicates() 
+    
+    def __checkIfAllContactsHaveBeenConsidered_ErrorCheck(self):
+        displayMessage = f"Number of duplicates: {len(self.indicesOfAllDuplicates)}.\nNumber of unique contacts: {len(self.indicesOfUniqueContacts)}.\nNumber of contacts with no phone number: {len(self.indicesOfContactsSansPhoneNumbers)}.\nTotal contacts: {len(self.allContacts)}. "
+        log.info(f"Number of groups of duplicates = {len(self.duplicates)}")
+        if len(self.indicesOfContactsSansPhoneNumbers) + len(self.indicesOfAllDuplicates) + len(self.indicesOfUniqueContacts) != self.getNumberOfContacts(): 
+            indicesOfAllContacts = set([x for x in range(self.getNumberOfContacts())])
+            missingIndices = indicesOfAllContacts - self.indicesOfAllDuplicates - self.indicesOfUniqueContacts - self.indicesOfContactsSansPhoneNumbers
+            log.error(f"Missing contact's indices: {missingIndices}")            
+            differenceBetweenActualAndExpected = len(self.allContacts) - (len(self.indicesOfAllDuplicates) + len(self.indicesOfUniqueContacts) + len(self.indicesOfContactsSansPhoneNumbers))
+            raise ValueError(displayMessage + f"The sum of duplicates and unique contacts should be equal to total contacts. If not, there's some bug in the code. Values vary by {differenceBetweenActualAndExpected}")
+        else: log.info(displayMessage)   
 
     def __addPhoneNumberDuplicatesToBucket(self, duplicateBuckets):#passing duplicateBuckets by reference
         #duplicateBuckets is a list() like this: [  [set(phone numbers), set(duplicate indices of the phone numbers)],  [set(), set()],  ...  ]. Each [set(), set()] is a bucket.
@@ -121,20 +127,25 @@ class VCF:
             if noPhoneNumberMatched:#create a new entry
                 duplicateBuckets.append([phoneNumbersAt_i, set({i})])
 
-    def __mergeBucketsHavingCommonIndices(self, duplicateBuckets):      
+    def __mergeBucketsHavingCommonIndices(self, duplicateBuckets):    
+        indicesToVerify = {497, 578, 1018, 261}
+        print(f"INSIDE mergeBuckets function. Need to check indices {indicesToVerify}")
         for i in range(len(duplicateBuckets)):
             if len(duplicateBuckets[i]) == 0: continue
-            bucket = duplicateBuckets[i]            
-            phoneNumbers = bucket[const.GlobalConstants.FIRST_POSITION_IN_LIST]
-            indices = bucket[const.GlobalConstants.SECOND_POSITION_IN_LIST]
+            phoneNumbers = duplicateBuckets[i][const.GlobalConstants.FIRST_POSITION_IN_LIST]
+            indices = duplicateBuckets[i][const.GlobalConstants.SECOND_POSITION_IN_LIST]
+            #if indicesToVerify.intersection(indices): print(f'FFFFound match of {indicesToVerify} in searched indices {indices}, {phoneNumbers}, {self.allContacts[578]}')
+            #if phoneNumbers.intersection({'38219380', '60709761', '38219380', '42814305', '38219380'}): print("found match for 578")
             for j in range(len(duplicateBuckets)):
-                if len(duplicateBuckets[j]) == 0 or i == j: continue                
-                bucketSearch = duplicateBuckets[j]                
-                indicesSearched = bucketSearch[const.GlobalConstants.SECOND_POSITION_IN_LIST]
-                if indices.intersection(indicesSearched):#if any of the indices match, merge into the bucket
-                    phoneNumbersSearched = bucketSearch[const.GlobalConstants.FIRST_POSITION_IN_LIST]
-                    bucket[const.GlobalConstants.FIRST_POSITION_IN_LIST] = phoneNumbers.union(phoneNumbersSearched)
-                    bucket[const.GlobalConstants.SECOND_POSITION_IN_LIST] = indices.union(indicesSearched)
+                if len(duplicateBuckets[j]) == 0 or i == j: continue                                
+                phoneNumbersSearched = duplicateBuckets[j][const.GlobalConstants.FIRST_POSITION_IN_LIST]
+                indicesSearched = duplicateBuckets[j][const.GlobalConstants.SECOND_POSITION_IN_LIST]
+                #if indicesToVerify.intersection(indicesSearched): print(f'Found match of {indicesToVerify} in searched indices {indicesSearched}')
+                if indices.intersection(indicesSearched):#if any of the indices match, merge into the bucket                    
+                    phoneNumbersBefore = duplicateBuckets[i][const.GlobalConstants.FIRST_POSITION_IN_LIST]
+                    indicesBefore = duplicateBuckets[i][const.GlobalConstants.SECOND_POSITION_IN_LIST]#somehow, without this line, the union operations below would cause some numbers to disappear
+                    duplicateBuckets[i][const.GlobalConstants.FIRST_POSITION_IN_LIST] = phoneNumbersBefore.union(phoneNumbersSearched)
+                    duplicateBuckets[i][const.GlobalConstants.SECOND_POSITION_IN_LIST] = indicesBefore.union(indicesSearched)
                     duplicateBuckets[j] = [] #mark it as empty, since the values are already merged into the other bucket
         #---remove any buckets that are marked empty
         mergedBuckets = deque()
