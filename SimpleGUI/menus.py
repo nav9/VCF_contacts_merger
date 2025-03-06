@@ -63,7 +63,7 @@ class ContactsChoiceGUI:
         duplicatesColumnDefaultText += "\n\n" + textwrap.fill(f"The program has {totalContacts} contacts in memory, of which {self.numDuplicates} appear to have duplicates.", self.multilineWrapLength)
         duplicatesDisplay = gui.Multiline(duplicatesColumnDefaultText, size = (self.multilineTextboxWidth, self.multilineTextboxHeight), key = const.Layout.DUPLICATES_DISPLAY_TEXTFIELD, horizontal_scroll = True, do_not_clear = True)
         tempColumnTitle = gui.Text("Temp (won't be saved)")
-        tempColumnDefaultText = textwrap.fill("You can use this column to temporarily store any text.", self.tempWrapLength)
+        tempColumnDefaultText = textwrap.fill(f"You can use this column to temporarily store any text. Don't forget to use the {const.Layout.SAVE_BUTTON} button to periodically save progress.", self.tempWrapLength)
         tempDisplay = gui.Multiline(tempColumnDefaultText, size = (self.tempTextboxWidth, self.tempTextboxHeight), key = const.Layout.TEMP_TEXT_TEXTFIELD, horizontal_scroll = True, do_not_clear = True)
         tempColumn = [[tempColumnTitle], [tempDisplay]]
         leftColumn = [[duplicatesColumnTitle], [duplicatesDisplay]]
@@ -121,13 +121,15 @@ class ContactsChoiceGUI:
         return self.event, self.values #for the caller to know when the save button is pressed (to save program state)               
  
     def __allowLeftRightArrowKeysForNavigation(self, enabled):
-        if enabled:#allow User to use left and right arrow keys to navigate duplicate contacts
-            self.window.bind(const.Layout.RIGHT_ARROW_KEY_BINDSTRING, const.Layout.NEXT_BUTTON)
-            self.window.bind(const.Layout.LEFT_ARROW_KEY_BINDSTRING, const.Layout.PREV_BUTTON)        
-        else:
-            self.window.unbind(const.Layout.RIGHT_ARROW_KEY_BINDSTRING)
-            self.window.unbind(const.Layout.LEFT_ARROW_KEY_BINDSTRING)          
-
+        try:
+            if enabled:#allow User to use left and right arrow keys to navigate duplicate contacts
+                self.window.bind(const.Layout.RIGHT_ARROW_KEY_BINDSTRING, const.Layout.NEXT_BUTTON)
+                self.window.bind(const.Layout.LEFT_ARROW_KEY_BINDSTRING, const.Layout.PREV_BUTTON)        
+            else:
+                self.window.unbind(const.Layout.RIGHT_ARROW_KEY_BINDSTRING)
+                self.window.unbind(const.Layout.LEFT_ARROW_KEY_BINDSTRING)          
+        except:
+            log.error("Unbind function not available for window in this version of PySimpleGUI.")
     def __saveAnyContactsChangesToMemory(self):
         """ If the user had made any changes to the unique contact or even the duplicate contact, save it to memory """
         uniqueContact = self.values[const.Layout.CONTACTS_DISPLAY_TEXTFIELD]
