@@ -27,4 +27,8 @@ To run `pytest` for a specific test file only, run it like this: `pytest tests/t
 To run `pytest` for a specific test function in a test file, run it like this: `pytest tests/test_filename.py -k 'test_functionName'`.  
 To see the captured output of passed tests, use `pytest -rP`. For failed tests, use `pytest -rx`. All outputs will be shown with `pytest -rA`.  
 
+# TODO
+* Add an option to remove photos from contacts
+* Add an option to remove contacts that have no phone number mentioned
+
 [![Donate](https://raw.githubusercontent.com/nav9/VCF_contacts_merger/main/gallery/thankYouDonateButton.png)](https://nrecursions.blogspot.com/2020/08/saying-thank-you.html)  
