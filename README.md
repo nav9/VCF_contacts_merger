@@ -26,3 +26,5 @@ Use `pytest` at the commandline to run the test cases. Do this in the root progr
 To run `pytest` for a specific test file only, run it like this: `pytest tests/test_filename.py`.  
 To run `pytest` for a specific test function in a test file, run it like this: `pytest tests/test_filename.py -k 'test_functionName'`.  
 To see the captured output of passed tests, use `pytest -rP`. For failed tests, use `pytest -rx`. All outputs will be shown with `pytest -rA`.  
+
+[![Donate](https://raw.githubusercontent.com/nav9/VCF_contacts_merger/main/gallery/thankYouDonateButton.png)](https://nrecursions.blogspot.com/2020/08/saying-thank-you.html)  
